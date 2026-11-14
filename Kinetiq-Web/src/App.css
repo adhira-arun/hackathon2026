@@ -1711,3 +1711,249 @@ form button span {
     min-height: 155px;
   }
 }
+
+/* Polished OT neck-session report */
+.neck-report-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin-top: 22px;
+}
+
+.neck-report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.neck-report-stat {
+  min-height: 112px;
+  padding: 19px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f5f2ec;
+  border: 1px solid #e8e0d5;
+  border-radius: 12px;
+}
+
+.neck-report-stat > span,
+.neck-report-comparison-top span {
+  color: #9b9081;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.neck-report-stat strong {
+  color: #514d45;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.neck-report-stat strong small {
+  color: #a49a8c;
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.neck-report-section {
+  padding: 22px;
+  background: #fffdfa;
+  border: 1px solid #e8e0d5;
+  border-radius: 13px;
+}
+
+.neck-report-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.neck-report-section-heading h4 {
+  margin: 5px 0 0;
+}
+
+.neck-report-unit {
+  color: #9b9081;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.neck-report-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.neck-report-comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.neck-report-comparison-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.neck-report-comparison-top strong {
+  color: #514d45;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.neck-report-bar-track,
+.neck-report-set-track {
+  height: 9px;
+  overflow: hidden;
+  background: #eee9e1;
+  border-radius: 999px;
+}
+
+.neck-report-bar-fill,
+.neck-report-set-track > div {
+  height: 100%;
+  background: #929b86;
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
+.neck-report-table-wrap {
+  margin-top: 15px;
+  overflow-x: auto;
+}
+
+.neck-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.neck-report-table th {
+  padding: 12px 14px;
+  color: #9b9081;
+  background: #f6f3ed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.neck-report-table td {
+  padding: 13px 14px;
+  color: #5c574f;
+  border-bottom: 1px solid #eee9e1;
+  font-size: 13px;
+}
+
+.neck-report-table td:first-child {
+  color: #928777;
+  font-variant-numeric: tabular-nums;
+}
+
+.neck-report-quality {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.neck-report-quality.valid {
+  color: #68765f;
+  background: #edf1e9;
+}
+
+.neck-report-quality.review {
+  color: #8b6d43;
+  background: #f5eee2;
+}
+
+.neck-report-set-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(100px, 1.4fr);
+  align-items: center;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eee9e1;
+}
+
+.neck-report-set-row > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.neck-report-set-row strong {
+  color: #514d45;
+  font-size: 13px;
+}
+
+.neck-report-set-row span,
+.neck-report-empty {
+  color: #928a7d;
+  font-size: 12px;
+}
+
+.neck-report-empty {
+  margin: 14px 0 0;
+  line-height: 1.6;
+}
+
+.report-raw-details {
+  padding: 17px 20px;
+  background: #f5f2ec;
+  border: 1px solid #e8e0d5;
+  border-radius: 11px;
+}
+
+.report-raw-details summary {
+  color: #655f55;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.report-raw-details .report-json {
+  margin-top: 15px;
+}
+
+.neck-report-disclaimer {
+  margin: 0;
+  padding: 14px 16px;
+  color: #847b6e;
+  background: #f7f4ee;
+  border-left: 3px solid #b7ad9d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .neck-report-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .neck-report-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .neck-report-section {
+    padding: 16px;
+  }
+
+  .neck-report-set-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

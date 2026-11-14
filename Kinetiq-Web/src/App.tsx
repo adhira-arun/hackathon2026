@@ -31,43 +31,7 @@ function readReports(): SessionReport[] {
 
 
 const WEEKLY_CHECKLIST_KEY = 'kinetiq.weeklyChecklist'
-const NECK_WEEKLY_CHECKLIST_KEY = 'kinetiq.neckWeeklyChecklist'
 const DEMO_COMPLETED_WEEK = '2026-11-08'
-
-const NECK_WEEKLY_EXERCISES = [
-  { day: 'Sunday', exercise: 'Gentle Neck Rotation', type: 'manual' },
-  { day: 'Monday', exercise: 'Neck Side Bends', type: 'side-bends' },
-  { day: 'Tuesday', exercise: 'Neck Flexion and Extension', type: 'extension' },
-  { day: 'Wednesday', exercise: 'Gentle Neck Rotation', type: 'manual' },
-  { day: 'Thursday', exercise: 'Neck Side Bends', type: 'side-bends' },
-  { day: 'Friday', exercise: 'Neck Flexion and Extension', type: 'extension' },
-  { day: 'Saturday', exercise: 'Neck Side Bends', type: 'side-bends' },
-] as const
-
-function readNeckWeeklyChecklist(weekKey: string): number[] {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}'
-    )
-    return saved[weekKey] || []
-  } catch {
-    return []
-  }
-}
-
-function saveNeckCompletedDay(weekKey: string, dayIndex: number) {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}'
-    )
-    const completed: number[] = saved[weekKey] || []
-    if (!completed.includes(dayIndex)) completed.push(dayIndex)
-    saved[weekKey] = completed
-    localStorage.setItem(NECK_WEEKLY_CHECKLIST_KEY, JSON.stringify(saved))
-  } catch {
-    console.error('Could not save neck weekly checklist.')
-  }
-}
 
 const WEEKLY_EXERCISES = [
   { day: 'Sunday', exercise: 'Seated Knee Extensions', type: 'tracked' },
@@ -585,123 +549,46 @@ function NeckDashboard({
   logout: () => void
   onReport: (report: NeckSessionReport) => void
 }) {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null)
-  const [today, setToday] = useState(() => new Date())
-  const [completedDays, setCompletedDays] = useState<number[]>([])
+  const [selectedExercise, setSelectedExercise] = useState<'side-bends' | 'extension' | null>(null)
 
-  const weekDates = getWeekDates(today)
-  const weekKey = localDateKey(weekDates[0])
-
-  useEffect(() => {
-    const savedDays = readNeckWeeklyChecklist(weekKey)
-    const initialDays =
-      weekKey === DEMO_COMPLETED_WEEK
-        ? Array.from(new Set([...savedDays, 0, 1, 2, 3, 4, 5]))
-        : savedDays
-
-    if (weekKey === DEMO_COMPLETED_WEEK) {
-      try {
-        const saved = JSON.parse(
-          localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}'
-        )
-        saved[weekKey] = initialDays
-        localStorage.setItem(NECK_WEEKLY_CHECKLIST_KEY, JSON.stringify(saved))
-      } catch {
-        console.error('Could not initialize neck demo checklist.')
-      }
-    }
-    setCompletedDays(initialDays)
-  }, [weekKey])
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setToday(new Date()), 30000)
-    return () => window.clearInterval(interval)
-  }, [])
-
-  function completeDay(dayIndex: number) {
-    saveNeckCompletedDay(weekKey, dayIndex)
-    setCompletedDays((previous) =>
-      previous.includes(dayIndex) ? previous : [...previous, dayIndex]
-    )
-    setSelectedDay(null)
-  }
-
-  function handleSessionComplete(report: NeckSessionReport) {
+  function handleComplete(report: NeckSessionReport) {
     onReport(report)
-    if (report.status === 'completed' && selectedDay !== null) {
-      completeDay(selectedDay)
-    }
   }
 
-  const selectedExercise =
-    selectedDay !== null ? NECK_WEEKLY_EXERCISES[selectedDay] : null
-
-  if (selectedExercise && selectedDay !== null) {
-    const isSideBends = selectedExercise.type === 'side-bends'
-    const isExtension = selectedExercise.type === 'extension'
-
-    if (isSideBends) {
-      return (
-        <NeckSideBends
-          onBack={() => setSelectedDay(null)}
-          onComplete={handleSessionComplete}
-        />
-      )
-    }
-
-    if (isExtension) {
-      return (
-        <NeckExtension
-          onBack={() => setSelectedDay(null)}
-          onComplete={handleSessionComplete}
-        />
-      )
-    }
-
-    return (
-      <div className="dashboard">
-        <Header name={account.name} role="Patient" logout={logout} />
-        <main className="dashboard-content">
-          <button className="back-link" onClick={() => setSelectedDay(null)}>
-            ← Back to weekly plan
-          </button>
-          <span className="eyebrow">
-            {selectedExercise.day.toUpperCase()} · NECK REHABILITATION
-          </span>
-          <h2>{selectedExercise.exercise}</h2>
-          <p className="dashboard-subtitle">
-            Your scheduled rehabilitation activity.
-          </p>
-          <section className="program-card">
-            <div>
-              <span className="eyebrow">SCHEDULED EXERCISE</span>
-              <h3>Therapist-assigned repetitions</h3>
-              <p>Move gently and follow your occupational therapist's instructions.</p>
-            </div>
-          </section>
-          <p className="demo-note">
-            This exercise is listed in the program but does not yet have camera tracking.
-          </p>
-          <button
-            className="primary-action"
-            onClick={() => completeDay(selectedDay)}
-          >
-            {completedDays.includes(selectedDay)
-              ? 'Return to weekly plan →'
-              : 'Mark exercise complete →'}
-          </button>
-          {completedDays.includes(selectedDay) && (
-            <p className="completion-message">
-              <span>✓</span> This day is marked completed. You can reopen it for demonstration purposes.
-            </p>
-          )}
-        </main>
-      </div>
-    )
+  if (selectedExercise === 'side-bends') {
+    return <NeckSideBends onBack={() => setSelectedExercise(null)} onComplete={handleComplete} />
   }
 
-  const completedCount = completedDays.length
-  const progress = (completedCount / 7) * 100
+  if (selectedExercise === 'extension') {
+    return <NeckExtension onBack={() => setSelectedExercise(null)} onComplete={handleComplete} />
+  }
+
+  const neckExercises = [
+    {
+      id: 'rotation',
+      number: '01',
+      title: 'Gentle Neck Rotation',
+      detail: 'Therapist-assigned repetitions',
+      status: 'Assigned exercise',
+      available: false,
+    },
+    {
+      id: 'side-bends',
+      number: '02',
+      title: 'Neck Side Bends',
+      detail: 'Left → neutral → right → neutral · 2 sets × 10 reps',
+      status: 'Camera tracking available',
+      available: true,
+    },
+    {
+      id: 'extension',
+      number: '03',
+      title: 'Neck Flexion and Extension',
+      detail: 'Flexion → extension → neutral · 2 sets × 10 reps',
+      status: 'Camera tracking available',
+      available: true,
+    },
+  ] as const
 
   return (
     <div className="dashboard">
@@ -717,113 +604,64 @@ function NeckDashboard({
           <div>
             <span className="eyebrow">YOUR ACTIVE PROGRAM</span>
             <h3>Neck Rehabilitation</h3>
-            <p>Your personalized weekly cervical mobility plan is ready.</p>
+            <p>Your personalized cervical mobility program.</p>
           </div>
         </section>
 
         <section className="weekly-progress-card">
           <div className="weekly-progress-heading">
             <div>
-              <span className="eyebrow">WEEKLY ACTIVITY</span>
-              <h3>Your weekly progress</h3>
+              <span className="eyebrow">TODAY'S PLAN</span>
+              <h3>Your neck exercises</h3>
             </div>
-            <strong>{completedCount}/7</strong>
+            <strong>02</strong>
           </div>
           <div className="weekly-progress-track">
-            <div style={{ width: `${progress}%` }} />
+            <div style={{ width: '66.67%' }} />
           </div>
-          <p>{completedCount} of 7 days completed this week.</p>
+          <p>2 camera-tracked exercises available in your demonstration program.</p>
         </section>
 
         <div className="weekly-plan-heading">
           <div>
-            <span className="eyebrow">SUNDAY – SATURDAY</span>
-            <h3 className="section-heading">Your weekly exercises</h3>
+            <span className="eyebrow">CERVICAL MOBILITY</span>
+            <h3 className="section-heading">Today's exercises</h3>
           </div>
         </div>
 
-        <div className="weekly-checklist">
-          {NECK_WEEKLY_EXERCISES.map((item, index) => {
-            const date = weekDates[index]
-            const isCompleted = completedDays.includes(index)
-            const isToday = localDateKey(date) === localDateKey(today)
-            const isFuture =
-              date >
-              new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-            const availabilityLabel = isFuture
-              ? `Available ${item.day} at 12:00 AM`
-              : isToday
-                ? 'Available today'
-                : 'Available'
-
-            return (
-              <button
-                key={item.day}
-                className={`weekly-day-card ${
-                  isCompleted ? 'completed' : ''
-                } ${isFuture ? 'future-day' : ''} ${
-                  isToday ? 'current-day' : ''
-                }`}
-                onClick={() => setSelectedDay(index)}
-                aria-label={`${item.day}: ${item.exercise}. ${
-                  isCompleted
-                    ? 'Completed. Click to replay demo.'
-                    : isFuture
-                      ? `${availabilityLabel}. Demo access enabled.`
-                      : availabilityLabel
-                }`}
-              >
-                <div className="weekly-day-name">
-                  <span>{item.day.slice(0, 3)}</span>
-                  <small>
-                    {date.toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </small>
-                </div>
-
-                <div className="weekly-day-info">
-                  <strong>{item.exercise}</strong>
-                  <small>
-                    2 sets × 10 reps ·{' '}
-                    {item.type === 'manual' ? 'Therapist assigned' : 'Camera tracked'}
-                  </small>
-                  <span className="weekly-day-status">
-                    {isCompleted
-                      ? 'Completed · Demo replay available'
-                      : isFuture
-                        ? `${availabilityLabel} · Demo access`
-                        : availabilityLabel}
-                  </span>
-                </div>
-
-                <div className="weekly-day-indicator">
-                  {isCompleted ? (
-                    <span className="weekly-lock-symbol" aria-label="Completed and locked">🔒</span>
-                  ) : isFuture ? (
-                    <span className="weekly-lock">◷</span>
-                  ) : (
-                    <span className="weekly-open">→</span>
-                  )}
-                </div>
-              </button>
-            )
-          })}
+        <div className="neck-exercise-grid">
+          {neckExercises.map((exercise) => (
+            <button
+              key={exercise.id}
+              type="button"
+              className={`neck-exercise-card ${exercise.available ? '' : 'neck-exercise-static'}`}
+              onClick={() => {
+                if (exercise.id === 'side-bends') setSelectedExercise('side-bends')
+                if (exercise.id === 'extension') setSelectedExercise('extension')
+              }}
+              disabled={!exercise.available}
+              aria-label={`${exercise.title}. ${exercise.available ? 'Start exercise.' : 'Assigned exercise, not yet camera tracked.'}`}
+            >
+              <span className="neck-exercise-number">{exercise.number}</span>
+              <span className="neck-exercise-info">
+                <strong>{exercise.title}</strong>
+                <small>{exercise.detail}</small>
+              </span>
+              <span className="neck-exercise-status">{exercise.status}</span>
+              <span className="neck-exercise-indicator">
+                {exercise.available ? '→' : '·'}
+              </span>
+            </button>
+          ))}
         </div>
 
         <p className="demo-note">
-          November 8–13 are marked completed for this demonstration. Completed days show a lock icon and remain clickable for demo replay.
-        </p>
-        <p className="demo-note">
-          Follow your occupational therapist's prescribed exercise plan.
+          Demonstration program · Perform only exercises assigned by your therapist.
         </p>
       </main>
     </div>
   )
 }
-
 
 /* Visualizes the recorded peak angle for each repetition. */
 function AngleProgressChart({
@@ -976,6 +814,170 @@ function AngleProgressChart({
   )
 }
 
+function NeckReportDetail({ report }: { report: NeckSessionReport }) {
+  const metrics = report.movementMetrics || {}
+  const leftValues = Array.isArray(metrics.leftTiltDegrees)
+    ? metrics.leftTiltDegrees as number[]
+    : []
+  const rightValues = Array.isArray(metrics.rightTiltDegrees)
+    ? metrics.rightTiltDegrees as number[]
+    : []
+  const flexionValues = Array.isArray(metrics.flexionMovementProxy)
+    ? metrics.flexionMovementProxy as number[]
+    : []
+  const extensionValues = Array.isArray(metrics.extensionMovementProxy)
+    ? metrics.extensionMovementProxy as number[]
+    : []
+  const isSideBend = report.exercise.toLowerCase().includes('side bend')
+  const primaryValues = isSideBend ? leftValues : flexionValues
+  const secondaryValues = isSideBend ? rightValues : extensionValues
+  const primaryLabel = isSideBend ? 'Left tilt' : 'Flexion'
+  const secondaryLabel = isSideBend ? 'Right tilt' : 'Extension'
+  const allValues = [...primaryValues, ...secondaryValues].filter(
+    (value) => Number.isFinite(value) && value >= 0 && value <= 90
+  )
+  const average = (values: number[]) =>
+    values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : null
+  const primaryAverage = average(primaryValues.filter((v) => Number.isFinite(v) && v >= 0 && v <= 90))
+  const secondaryAverage = average(secondaryValues.filter((v) => Number.isFinite(v) && v >= 0 && v <= 90))
+  const maxValue = Math.max(10, ...allValues)
+  const completedSets = report.sets.length
+    ? report.sets.length
+    : Math.floor(report.totalRepetitions / report.targetRepetitionsPerSet)
+
+  return (
+    <div className="neck-report-detail">
+      <div className="neck-report-summary-grid">
+        <div className="neck-report-stat">
+          <span>REPETITIONS</span>
+          <strong>{report.totalRepetitions}<small> / {report.targetSets * report.targetRepetitionsPerSet}</small></strong>
+        </div>
+        <div className="neck-report-stat">
+          <span>SETS COMPLETED</span>
+          <strong>{completedSets}<small> / {report.targetSets}</small></strong>
+        </div>
+        <div className="neck-report-stat">
+          <span>REST INTERVAL</span>
+          <strong>{report.restSeconds}<small> sec</small></strong>
+        </div>
+      </div>
+
+      <section className="neck-report-section">
+        <div className="neck-report-section-heading">
+          <div>
+            <span className="eyebrow">MOVEMENT BREAKDOWN</span>
+            <h4>{isSideBend ? 'Left and right tilt' : 'Flexion and extension'}</h4>
+          </div>
+          <span className="neck-report-unit">2D movement proxy</span>
+        </div>
+        <p className="chart-description">
+          Average recorded movement values. These are experimental webcam estimates, not clinical cervical range-of-motion measurements.
+        </p>
+        <div className="neck-report-comparison">
+          {[{ label: primaryLabel, value: primaryAverage }, { label: secondaryLabel, value: secondaryAverage }].map((item) => (
+            <div className="neck-report-comparison-item" key={item.label}>
+              <div className="neck-report-comparison-top">
+                <span>{item.label}</span>
+                <strong>{item.value === null ? '—' : `${item.value.toFixed(1)}°`}</strong>
+              </div>
+              <div className="neck-report-bar-track">
+                <div
+                  className="neck-report-bar-fill"
+                  style={{ width: `${item.value === null ? 0 : Math.min(100, (item.value / maxValue) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="neck-report-section">
+        <div className="neck-report-section-heading">
+          <div>
+            <span className="eyebrow">REP-BY-REP RESULTS</span>
+            <h4>Recorded movement</h4>
+          </div>
+          <span className="neck-report-unit">{Math.max(primaryValues.length, secondaryValues.length)} records</span>
+        </div>
+        {Math.max(primaryValues.length, secondaryValues.length) ? (
+          <div className="neck-report-table-wrap">
+            <table className="neck-report-table">
+              <thead>
+                <tr>
+                  <th>Rep</th>
+                  <th>{primaryLabel}</th>
+                  <th>{secondaryLabel}</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: Math.max(primaryValues.length, secondaryValues.length) }, (_, index) => {
+                  const first = primaryValues[index]
+                  const second = secondaryValues[index]
+                  const valid = [first, second].every(
+                    (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 90
+                  )
+                  return (
+                    <tr key={index}>
+                      <td>{String(index + 1).padStart(2, '0')}</td>
+                      <td>{typeof first === 'number' && Number.isFinite(first) ? `${first.toFixed(1)}°` : '—'}</td>
+                      <td>{typeof second === 'number' && Number.isFinite(second) ? `${second.toFixed(1)}°` : '—'}</td>
+                      <td><span className={`neck-report-quality ${valid ? 'valid' : 'review'}`}>{valid ? 'Recorded' : 'Review'}</span></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="neck-report-empty">No individual movement values were recorded for this session.</p>
+        )}
+      </section>
+
+      <section className="neck-report-section">
+        <div className="neck-report-section-heading">
+          <div>
+            <span className="eyebrow">SET PERFORMANCE</span>
+            <h4>Session sets</h4>
+          </div>
+        </div>
+        {report.sets.length ? report.sets.map((set) => (
+          <div className="neck-report-set-row" key={set.setNumber}>
+            <div>
+              <strong>Set {set.setNumber}</strong>
+              <span>{set.repetitions} of {set.targetRepetitions} repetitions</span>
+            </div>
+            <div className="neck-report-set-track">
+              <div style={{ width: `${Math.min(100, (set.repetitions / set.targetRepetitions) * 100)}%` }} />
+            </div>
+          </div>
+        )) : (
+          <p className="neck-report-empty">
+            Per-set breakdown was not saved for this session. Rep-level movement data is shown above.
+          </p>
+        )}
+      </section>
+
+      <details className="report-raw-details">
+        <summary>View AI-ready session data</summary>
+        <pre className="report-json">
+          {JSON.stringify({
+            patientName: report.patientName,
+            exercise: report.exercise,
+            totalRepetitions: report.totalRepetitions,
+            sets: report.sets,
+            movementMetrics: report.movementMetrics,
+            aiAnalysisInput: report.aiAnalysisInput,
+          }, null, 2)}
+        </pre>
+      </details>
+      <p className="neck-report-disclaimer">{report.dataQualityNote}</p>
+    </div>
+  )
+}
+
 function OtDashboard({
   account,
   logout,
@@ -1113,86 +1115,63 @@ function OtDashboard({
               {new Date(selectedReport.completedAt).toLocaleString()}
             </p>
 
-            <div className="report-metrics">
-              <div>
-                <span>REPS COMPLETED</span>
-                <strong>
-                  {selectedReport.totalRepetitions}/
-                  {selectedReport.targetSets * selectedReport.targetRepetitionsPerSet}
-                </strong>
-              </div>
-              {'bestExtensionAngle' in selectedReport ? (
-                <>
+            {'movementMetrics' in selectedReport ? (
+              <NeckReportDetail report={selectedReport} />
+            ) : (
+              <>
+                <div className="report-metrics">
                   <div>
-                    <span>{selectedReport.exercise === 'Standing knee raise' ? 'BEST HIP ANGLE' : 'BEST EXTENSION'}</span>
+                    <span>REPS COMPLETED</span>
+                    <strong>
+                      {selectedReport.totalRepetitions}/
+                      {selectedReport.targetSets * selectedReport.targetRepetitionsPerSet}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>BEST EXTENSION</span>
                     <strong>{selectedReport.bestExtensionAngle ?? '--'}°</strong>
                   </div>
                   <div>
-                    <span>{selectedReport.exercise === 'Standing knee raise' ? 'AVERAGE HIP ANGLE' : 'AVERAGE EXTENSION'}</span>
+                    <span>AVERAGE EXTENSION</span>
                     <strong>{selectedReport.averageExtensionAngle ?? '--'}°</strong>
                   </div>
-                </>
-              ) : (
-                <div>
-                  <span>EXERCISE TYPE</span>
-                  <strong>Neck mobility</strong>
                 </div>
-              )}
-            </div>
-
-            {'bestExtensionAngle' in selectedReport ? (
-              <>
                 <h4>Angle progression</h4>
                 <p className="chart-description">
                   Recorded peak movement angle for each completed repetition.
                 </p>
                 <AngleProgressChart sets={selectedReport.sets} />
-              </>
-            ) : (
-              <>
-                <h4>Movement measurements</h4>
-                <p className="chart-description">
-                  Experimental 2D webcam movement proxies, not clinically validated cervical angles.
-                </p>
-                <pre className="report-json">
-                  {JSON.stringify(selectedReport.movementMetrics, null, 2)}
-                </pre>
+                <h4>Set-by-set performance</h4>
+                {selectedReport.sets.map((set) => (
+                  <div className="report-set" key={set.setNumber}>
+                    <strong>
+                      Set {set.setNumber}: {set.repetitions}/{set.targetRepetitions} reps
+                    </strong>
+                    <p>
+                      Best: {set.bestAngle ?? '--'} · Average: {set.averageAngle ?? '--'}
+                    </p>
+                    <p>Recorded values: {set.angles.join(', ') || 'No completed reps'}</p>
+                  </div>
+                ))}
+                <details className="report-raw-details">
+                  <summary>View AI-ready session data</summary>
+                  <pre className="report-json">
+                    {JSON.stringify(
+                      {
+                        patientName: selectedReport.patientName,
+                        exercise: selectedReport.exercise,
+                        sets: selectedReport.sets,
+                        bestExtensionAngle: selectedReport.bestExtensionAngle,
+                        averageExtensionAngle: selectedReport.averageExtensionAngle,
+                        aiAnalysisInput: selectedReport.aiAnalysisInput,
+                      },
+                      null,
+                      2
+                    )}
+                  </pre>
+                </details>
               </>
             )}
-
-            <h4>Set-by-set performance</h4>
-            {selectedReport.sets.map((set) => (
-              <div className="report-set" key={set.setNumber}>
-                <strong>
-                  Set {set.setNumber}: {set.repetitions}/{set.targetRepetitions} reps
-                </strong>
-                {'bestAngle' in set && (
-                  <p>
-                    Best: {set.bestAngle ?? '--'} · Average: {set.averageAngle ?? '--'}
-                  </p>
-                )}
-                <p>
-                  Recorded values: {set.angles.join(', ') || 'No completed reps'}
-                </p>
-              </div>
-            ))}
-
-            <h4>AI-ready session data</h4>
-            <pre className="report-json">
-              {JSON.stringify(
-                {
-                  patientName: selectedReport.patientName,
-                  exercise: selectedReport.exercise,
-                  sets: selectedReport.sets,
-                  movementMetrics: 'movementMetrics' in selectedReport ? selectedReport.movementMetrics : undefined,
-                  sessionBest: 'bestExtensionAngle' in selectedReport ? selectedReport.bestExtensionAngle : undefined,
-                  sessionAverage: 'averageExtensionAngle' in selectedReport ? selectedReport.averageExtensionAngle : undefined,
-                  aiAnalysisInput: selectedReport.aiAnalysisInput,
-                },
-                null,
-                2
-              )}
-            </pre>
 
             <p className="demo-note">
               {selectedReport.dataQualityNote} This is a descriptive data
