@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Node / React / Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Java / Maven
+target/
+*.class
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+npm-debug.log*
