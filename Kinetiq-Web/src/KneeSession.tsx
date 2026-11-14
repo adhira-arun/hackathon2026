@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision'
 import './App.css'
+import { sendReport, type AiSummary, type OtReview } from './api'
 
 type KneeSessionProps = {
   onBack: () => void
@@ -40,22 +41,25 @@ export type KneeSessionReport = {
   averageExtensionAngle: number | null
   sets: SetReport[]
   repAngles: number[]
-  dataQualityNote: string
+    dataQualityNote: string
   patientFeedback: {
-    before: { rating: number | null; label: string; comment: string };
-    during: { rating: number | null; label: string; comment: string };
-  };
+    before: { rating: number | null; label: string; comment: string }
+    during: { rating: number | null; label: string; comment: string }
+  }
   aiAnalysisInput: {
-    purpose: string;
+    purpose: string
     priorityPatientFeedback: {
-      beforeExercise: { rating: number | null; label: string; comment: string };
-      duringExercise: { rating: number | null; label: string; comment: string };
-      interpretation: string;
-    };
-    metrics: string[];
-    instruction: string;
-  };
+      beforeExercise: { rating: number | null; label: string; comment: string }
+      duringExercise: { rating: number | null; label: string; comment: string }
+      interpretation: string
+    }
+    metrics: string[]
+    instruction: string
+  }
+  aiSummary?: AiSummary
+  otReview?: OtReview
 }
+
 
 type PosePoint = {
   x: number
@@ -195,7 +199,7 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
     'Position yourself sideways to the camera.'
   )
 
-  const [repAngles, setRepAngles] = useState<number[]>([])
+   const [, setRepAngles] = useState<number[]>([])
   const [setReports, setSetReports] = useState<SetReport[]>([])
   const [restPhase, setRestPhase] = useState<'set' | 'exercise'>('set')
 
@@ -813,6 +817,7 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
         instruction:
           'Lead the summary with the patient-reported before and during exercise feedback. Highlight any lower rating or discomfort comment for OT review. Then describe observed performance and data limitations. Do not infer pain, strength, diagnosis, or clinical range of motion.',
       },
+      
     }
 
     try {
@@ -827,6 +832,10 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
     } catch (err) {
       console.error('Unable to save session report:', err)
     }
+    sendReport(report).catch((err) =>
+      console.error('Report server unavailable, saved locally only.', err)
+    )
+
 
     onComplete(report)
   }
@@ -935,10 +944,6 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
 
   const progress = (repetitions / TARGET_REPS) * 100
 
-  const allRepAngles = [
-    ...setReports.flatMap((item) => item.angles),
-    ...repAngles,
-  ]
 
   return (
     <div className="dashboard">

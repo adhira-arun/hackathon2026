@@ -6,6 +6,8 @@ import StandingKneeSession from './StandingKneeSession'
 import NeckSideBends, { type NeckSessionReport } from './NeckSideBends'
 import NeckExtension from './NeckExtension'
 import './App.css'
+import { fetchReports } from './api'
+import ReportReviewPanel from './ReportReviewPanel'
 
 type SessionReport = KneeSessionReport | NeckSessionReport
 
@@ -121,6 +123,17 @@ function App() {
     setTheme((current) => current === 'light' ? 'dark' : 'light')
   }
 
+  async function refreshReports() {
+    const local = readReports()
+    try {
+      const server = await fetchReports<SessionReport>()
+      const serverIds = new Set(server.map((r) => r.id))
+      setReports([...server, ...local.filter((r) => !serverIds.has(r.id))])
+    } catch {
+      setReports(local)
+    }
+  }
+
   function handleLogin(event: FormEvent<HTMLFormElement>) {
   event.preventDefault()
 
@@ -150,7 +163,7 @@ function App() {
   }
 
   if (matched.role === 'ot') {
-    setReports(readReports())
+    void refreshReports()
   }
 }
 
@@ -247,9 +260,9 @@ function App() {
       account={account}
       logout={logout}
       reports={reports}
-      theme={theme}
+ theme={theme}
       toggleTheme={toggleTheme}
-      onReportsRefresh={() => setReports(readReports())}
+      onReportsRefresh={refreshReports}
     />
   )
 }
@@ -1404,6 +1417,14 @@ function OtDashboard({
                     </details>
                   </>
                 )}
+                <ReportReviewPanel
+                  key={selectedReport.id}
+                  report={selectedReport}
+                  onUpdated={(updated) => {
+                    setSelectedReport(updated as SessionReport)
+                    onReportsRefresh()
+                  }}
+                />
                 <p className="demo-note">
                   {selectedReport.dataQualityNote} This is a descriptive data report, not an AI-generated clinical assessment.
                 </p>
