@@ -20,6 +20,15 @@ const accounts: Account[] = [
 
 const REPORTS_KEY = 'kinetiq.sessionReports'
 const REST_SETTING_KEY = 'kinetiq.ot.restSeconds'
+const patientRestKey = (username: string) => `kinetiq.ot.restSeconds.${username}`
+const DEFAULT_REST_SECONDS = 45
+
+function readPatientRestSeconds(username: string) {
+  const stored = Number(localStorage.getItem(patientRestKey(username)))
+  return Number.isFinite(stored) && stored >= 5 && stored <= 300
+    ? stored
+    : DEFAULT_REST_SECONDS
+}
 
 function readReports(): SessionReport[] {
   try {
@@ -116,6 +125,15 @@ function App() {
 
   setError('')
   setAccount(matched)
+
+  if (matched.role === 'knee' || matched.role === 'neck') {
+    // Session components read the active rest duration from this shared key.
+    // Load the signed-in patient's own therapist setting before the session starts.
+    localStorage.setItem(
+      REST_SETTING_KEY,
+      String(readPatientRestSeconds(matched.username))
+    )
+  }
 
   if (matched.role === 'ot') {
     setReports(readReports())
@@ -989,21 +1007,38 @@ function OtDashboard({
   reports: SessionReport[]
   onReportsRefresh: () => void
 }) {
-  const [restSeconds, setRestSeconds] = useState(
-    () => Number(localStorage.getItem(REST_SETTING_KEY) || 45)
+  const patients = accounts.filter(
+    (item): item is Account & { role: 'knee' | 'neck' } =>
+      item.role === 'knee' || item.role === 'neck'
   )
-  const [selectedReport, setSelectedReport] =
-    useState<SessionReport | null>(null)
+  const [selectedPatient, setSelectedPatient] = useState<Account | null>(null)
+  const [selectedReport, setSelectedReport] = useState<SessionReport | null>(null)
+  const [restSeconds, setRestSeconds] = useState(DEFAULT_REST_SECONDS)
+  const [restSaved, setRestSaved] = useState(false)
 
-  function saveRest() {
-    const safeValue = Math.max(5, Math.min(300, restSeconds))
+  function openPatient(patient: Account) {
+    setSelectedPatient(patient)
+    setSelectedReport(null)
+    setRestSeconds(readPatientRestSeconds(patient.username))
+    setRestSaved(false)
+  }
+
+  function savePatientRest() {
+    if (!selectedPatient) return
+    const safeValue = Math.max(5, Math.min(300, Number(restSeconds) || DEFAULT_REST_SECONDS))
+    localStorage.setItem(patientRestKey(selectedPatient.username), String(safeValue))
+    // Keep the session components' existing storage contract in sync for this patient.
     localStorage.setItem(REST_SETTING_KEY, String(safeValue))
     setRestSeconds(safeValue)
+    setRestSaved(true)
   }
 
   const sortedReports = [...reports].sort(
     (a, b) => b.completedAt.localeCompare(a.completedAt)
   )
+  const patientReports = selectedPatient
+    ? sortedReports.filter((report) => report.patientName === selectedPatient.name)
+    : []
 
   return (
     <div className="dashboard ot-dashboard">
@@ -1017,199 +1052,233 @@ function OtDashboard({
         <span className="eyebrow">CLINICAL WORKSPACE</span>
         <h2>Good evening, Sarah.</h2>
         <p className="dashboard-subtitle">
-          Your patient overview and rehabilitation workspace.
+          Manage patient programs, review session reports, and personalize recovery settings.
         </p>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <span>DEMO PATIENTS</span>
-            <strong>02</strong>
-          </div>
-          <div className="stat-card">
-            <span>ACTIVE PROGRAMS</span>
-            <strong>02</strong>
-          </div>
-          <div className="stat-card">
-            <span>SESSION REPORTS</span>
-            <strong>{sortedReports.length.toString().padStart(2, '0')}</strong>
-          </div>
-        </div>
-
-        <div className="ot-section-header">
-          <div>
-            <span className="eyebrow">PATIENT MANAGEMENT</span>
-            <h3>My patients</h3>
-          </div>
-        </div>
-
-        <div className="patient-list">
-          <div className="patient-card">
-            <div className="patient-avatar">AM</div>
-            <div className="patient-info">
-              <strong>Alex Morgan</strong>
-              <span>Knee rehabilitation</span>
-              <small>Active treatment plan</small>
+        {!selectedPatient ? (
+          <>
+            <div className="ot-section-header">
+              <div>
+                <span className="eyebrow">PATIENT MANAGEMENT</span>
+                <h3>My patients</h3>
+                <p className="ot-section-subtitle">Select a patient to view their reports and individual program settings.</p>
+              </div>
+              <button className="secondary-action" onClick={onReportsRefresh}>
+                Refresh reports
+              </button>
             </div>
-            <span className="status-label">Active</span>
-          </div>
-          <div className="patient-card">
-            <div className="patient-avatar">JT</div>
-            <div className="patient-info">
-              <strong>Jordan Taylor</strong>
-              <span>Neck rehabilitation</span>
-              <small>Active treatment plan</small>
+
+            <div className="ot-patient-grid">
+              {patients.map((patient) => {
+                const count = sortedReports.filter(
+                  (report) => report.patientName === patient.name
+                ).length
+                return (
+                  <button
+                    className="ot-patient-card"
+                    key={patient.username}
+                    onClick={() => openPatient(patient)}
+                  >
+                    <div className="ot-patient-avatar">
+                      {patient.name.split(' ').map((part) => part[0]).join('')}
+                    </div>
+                    <div className="ot-patient-main">
+                      <strong>{patient.name}</strong>
+                      <span>{patient.role === 'knee' ? 'Knee rehabilitation' : 'Neck rehabilitation'}</span>
+                      <small>{count} session {count === 1 ? 'report' : 'reports'} available</small>
+                    </div>
+                    <div className="ot-patient-action">
+                      <span className="status-label">Active</span>
+                      <span className="ot-patient-arrow">View patient →</span>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
-            <span className="status-label">Active</span>
-          </div>
-        </div>
 
-        <section className="ot-settings-card">
-          <span className="eyebrow">THERAPIST CONTROLS</span>
-          <h3>Rest interval settings</h3>
-          <p>
-            Set the recovery interval applied automatically after each
-            completed set and between tracked knee exercises.
-          </p>
-          <label htmlFor="ot-rest-seconds">Rest duration (seconds)</label>
-          <div className="rest-setting-row">
-            <input
-              id="ot-rest-seconds"
-              type="number"
-              min="5"
-              max="300"
-              value={restSeconds}
-              onChange={(e) => setRestSeconds(Number(e.target.value))}
-            />
-            <button className="secondary-action" onClick={saveRest}>
-              Save rest setting
-            </button>
-          </div>
-          <small>
-            Saved setting: {Number(localStorage.getItem(REST_SETTING_KEY) || 45)}
-            {' '}seconds. Patients receive this value when they start a session.
-          </small>
-        </section>
-
-        <div className="ot-section-header">
-          <div>
-            <span className="eyebrow">CLINICAL WORKSPACE</span>
-            <h3>Session reports</h3>
-          </div>
-          <button className="secondary-action" onClick={onReportsRefresh}>
-            Refresh reports
-          </button>
-        </div>
-
-        {selectedReport ? (
-          <section className="report-detail">
-            <button
-              className="back-link"
-              onClick={() => setSelectedReport(null)}
-            >
-              ← All reports
-            </button>
-
-            <h3>{selectedReport.exercise}</h3>
-            <p>
-              {selectedReport.patientName} ·{' '}
-              {new Date(selectedReport.completedAt).toLocaleString()}
-            </p>
-
-            {'movementMetrics' in selectedReport ? (
-              <NeckReportDetail report={selectedReport} />
-            ) : (
-              <>
-                <div className="report-metrics">
-                  <div>
-                    <span>REPS COMPLETED</span>
-                    <strong>
-                      {selectedReport.totalRepetitions}/
-                      {selectedReport.targetSets * selectedReport.targetRepetitionsPerSet}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>BEST EXTENSION</span>
-                    <strong>{selectedReport.bestExtensionAngle ?? '--'}°</strong>
-                  </div>
-                  <div>
-                    <span>AVERAGE EXTENSION</span>
-                    <strong>{selectedReport.averageExtensionAngle ?? '--'}°</strong>
-                  </div>
+            <section className="ot-overview-card">
+              <span className="eyebrow">RECENT ACTIVITY</span>
+              <h3>Latest session reports</h3>
+              {sortedReports.length ? (
+                <div className="ot-recent-list">
+                  {sortedReports.slice(0, 4).map((report) => (
+                    <button
+                      className="ot-recent-row"
+                      key={report.id}
+                      onClick={() => {
+                        const patient = patients.find((item) => item.name === report.patientName)
+                        if (patient) {
+                          setSelectedPatient(patient)
+                          setRestSeconds(readPatientRestSeconds(patient.username))
+                          setSelectedReport(report)
+                        }
+                      }}
+                    >
+                      <span>
+                        <strong>{report.patientName}</strong>
+                        <small>{report.exercise} · {new Date(report.completedAt).toLocaleString()}</small>
+                      </span>
+                      <span>{report.totalRepetitions} reps →</span>
+                    </button>
+                  ))}
                 </div>
-                <h4>Angle progression</h4>
-                <p className="chart-description">
-                  Recorded peak movement angle for each completed repetition.
-                </p>
-                <AngleProgressChart sets={selectedReport.sets} />
-                <h4>Set-by-set performance</h4>
-                {selectedReport.sets.map((set) => (
-                  <div className="report-set" key={set.setNumber}>
-                    <strong>
-                      Set {set.setNumber}: {set.repetitions}/{set.targetRepetitions} reps
-                    </strong>
-                    <p>
-                      Best: {set.bestAngle ?? '--'} · Average: {set.averageAngle ?? '--'}
-                    </p>
-                    <p>Recorded values: {set.angles.join(', ') || 'No completed reps'}</p>
-                  </div>
-                ))}
-                <details className="report-raw-details">
-                  <summary>View AI-ready session data</summary>
-                  <pre className="report-json">
-                    {JSON.stringify(
-                      {
+              ) : (
+                <p className="empty-reports">Completed patient sessions will appear here.</p>
+              )}
+            </section>
+          </>
+        ) : (
+          <>
+            <button
+              className="back-link ot-back-link"
+              onClick={() => {
+                setSelectedPatient(null)
+                setSelectedReport(null)
+                setRestSaved(false)
+              }}
+            >
+              ← All patients
+            </button>
+
+            <section className="ot-patient-profile">
+              <div className="ot-patient-avatar large">
+                {selectedPatient.name.split(' ').map((part) => part[0]).join('')}
+              </div>
+              <div>
+                <span className="eyebrow">PATIENT PROFILE</span>
+                <h3>{selectedPatient.name}</h3>
+                <p>{selectedPatient.role === 'knee' ? 'Knee rehabilitation program' : 'Neck rehabilitation program'}</p>
+              </div>
+              <span className="status-label">Active</span>
+            </section>
+
+            <section className="ot-settings-card ot-personal-settings">
+              <span className="eyebrow">INDIVIDUAL THERAPIST CONTROLS</span>
+              <h3>Rest interval for {selectedPatient.name.split(' ')[0]}</h3>
+              <p>
+                This setting is saved specifically for this patient and is applied to their next exercise session.
+              </p>
+              <label htmlFor="ot-patient-rest-seconds">Rest duration (seconds)</label>
+              <div className="rest-setting-row">
+                <input
+                  id="ot-patient-rest-seconds"
+                  type="number"
+                  min="5"
+                  max="300"
+                  value={restSeconds}
+                  onChange={(event) => {
+                    setRestSeconds(Number(event.target.value))
+                    setRestSaved(false)
+                  }}
+                />
+                <button className="secondary-action" onClick={savePatientRest}>
+                  Save patient setting
+                </button>
+              </div>
+              <small>
+                Current saved setting: {readPatientRestSeconds(selectedPatient.username)} seconds. Choose between 5 and 300 seconds.
+              </small>
+              {restSaved && (
+                <p className="ot-saved-message">✓ Rest interval saved for {selectedPatient.name}.</p>
+              )}
+            </section>
+
+            <div className="ot-section-header ot-patient-reports-heading">
+              <div>
+                <span className="eyebrow">PATIENT HISTORY</span>
+                <h3>Session reports</h3>
+                <p className="ot-section-subtitle">Only reports belonging to {selectedPatient.name} are shown here.</p>
+              </div>
+              <button className="secondary-action" onClick={onReportsRefresh}>
+                Refresh reports
+              </button>
+            </div>
+
+            {selectedReport ? (
+              <section className="report-detail">
+                <button className="back-link" onClick={() => setSelectedReport(null)}>
+                  ← {selectedPatient.name}'s reports
+                </button>
+                <h3>{selectedReport.exercise}</h3>
+                <p>{selectedReport.patientName} · {new Date(selectedReport.completedAt).toLocaleString()}</p>
+
+                {'movementMetrics' in selectedReport ? (
+                  <NeckReportDetail report={selectedReport} />
+                ) : (
+                  <>
+                    <div className="report-metrics">
+                      <div>
+                        <span>REPS COMPLETED</span>
+                        <strong>{selectedReport.totalRepetitions}/{selectedReport.targetSets * selectedReport.targetRepetitionsPerSet}</strong>
+                      </div>
+                      <div>
+                        <span>BEST EXTENSION</span>
+                        <strong>{selectedReport.bestExtensionAngle ?? '--'}°</strong>
+                      </div>
+                      <div>
+                        <span>AVERAGE EXTENSION</span>
+                        <strong>{selectedReport.averageExtensionAngle ?? '--'}°</strong>
+                      </div>
+                    </div>
+                    <h4>Angle progression</h4>
+                    <p className="chart-description">Recorded peak movement angle for each completed repetition.</p>
+                    <AngleProgressChart sets={selectedReport.sets} />
+                    <h4>Set-by-set performance</h4>
+                    {selectedReport.sets.map((set) => (
+                      <div className="report-set" key={set.setNumber}>
+                        <strong>Set {set.setNumber}: {set.repetitions}/{set.targetRepetitions} reps</strong>
+                        <p>Best: {set.bestAngle ?? '--'} · Average: {set.averageAngle ?? '--'}</p>
+                        <p>Recorded values: {set.angles.join(', ') || 'No completed reps'}</p>
+                      </div>
+                    ))}
+                    <details className="report-raw-details">
+                      <summary>View AI-ready session data</summary>
+                      <pre className="report-json">{JSON.stringify({
                         patientName: selectedReport.patientName,
                         exercise: selectedReport.exercise,
                         sets: selectedReport.sets,
                         bestExtensionAngle: selectedReport.bestExtensionAngle,
                         averageExtensionAngle: selectedReport.averageExtensionAngle,
                         aiAnalysisInput: selectedReport.aiAnalysisInput,
-                      },
-                      null,
-                      2
-                    )}
-                  </pre>
-                </details>
-              </>
+                      }, null, 2)}</pre>
+                    </details>
+                  </>
+                )}
+                <p className="demo-note">
+                  {selectedReport.dataQualityNote} This is a descriptive data report, not an AI-generated clinical assessment.
+                </p>
+              </section>
+            ) : patientReports.length ? (
+              <div className="report-list">
+                {patientReports.map((report) => (
+                  <button
+                    className="report-card"
+                    key={report.id}
+                    onClick={() => setSelectedReport(report)}
+                  >
+                    <div>
+                      <strong>{report.exercise}</strong>
+                      <p>{new Date(report.completedAt).toLocaleString()} · {report.status}</p>
+                    </div>
+                    <span>
+                      {report.totalRepetitions} reps
+                      {'bestExtensionAngle' in report
+                        ? ` · Best ${report.bestExtensionAngle ?? '--'}°`
+                        : ' · Neck movement data'} →
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-reports">
+                No session reports for {selectedPatient.name} yet. Completed sessions will appear here.
+              </div>
             )}
-
-            <p className="demo-note">
-              {selectedReport.dataQualityNote} This is a descriptive data
-              report, not an AI-generated clinical assessment.
-            </p>
-          </section>
-        ) : sortedReports.length ? (
-          <div className="report-list">
-            {sortedReports.map((report) => (
-              <button
-                className="report-card"
-                key={report.id}
-                onClick={() => setSelectedReport(report)}
-              >
-                <div>
-                  <strong>{report.patientName} · {report.exercise}</strong>
-                  <p>
-                    {new Date(report.completedAt).toLocaleString()} · {report.status}
-                  </p>
-                </div>
-                <span>
-                  {report.totalRepetitions} reps
-                  {'bestExtensionAngle' in report
-                    ? ` · Best ${report.bestExtensionAngle ?? '--'}°`
-                    : ' · Neck movement data'} →
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-reports">
-            No session reports yet. Completed patient sessions will appear here.
-          </div>
+          </>
         )}
 
         <p className="demo-note">
-          Fictional demonstration data · Local browser storage only ·
-          Not for clinical decision-making.
+          Fictional demonstration data · Local browser storage only · Not for clinical decision-making.
         </p>
       </main>
     </div>
