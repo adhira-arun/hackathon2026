@@ -94,8 +94,15 @@ function signedHeadTilt(landmarks: PosePoint[]) {
   const leftEar = landmarks[7]
   const rightEar = landmarks[8]
   if (!leftEar || !rightEar) return null
-  // Head roll relative to the horizontal image axis. Neutral is calibrated at session start.
-  return Math.atan2(rightEar.y - leftEar.y, rightEar.x - leftEar.x) * 180 / Math.PI
+
+  // Use the absolute horizontal ear separation so the sign is not flipped
+  // by the mirrored/front-facing webcam coordinate order. MediaPipe's
+  // right-ear landmark moving downward produces a positive (right) tilt;
+  // the left ear moving downward produces a negative (left) tilt.
+  const horizontalSeparation = Math.abs(rightEar.x - leftEar.x)
+  if (horizontalSeparation < 0.02) return null
+
+  return Math.atan2(rightEar.y - leftEar.y, horizontalSeparation) * 180 / Math.PI
 }
 
 function headPitchProxy(landmarks: PosePoint[]) {
