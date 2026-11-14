@@ -41,11 +41,20 @@ export type KneeSessionReport = {
   sets: SetReport[]
   repAngles: number[]
   dataQualityNote: string
+  patientFeedback: {
+    before: { rating: number | null; label: string; comment: string };
+    during: { rating: number | null; label: string; comment: string };
+  };
   aiAnalysisInput: {
-    purpose: string
-    metrics: string[]
-    instruction: string
-  }
+    purpose: string;
+    priorityPatientFeedback: {
+      beforeExercise: { rating: number | null; label: string; comment: string };
+      duringExercise: { rating: number | null; label: string; comment: string };
+      interpretation: string;
+    };
+    metrics: string[];
+    instruction: string;
+  };
 }
 
 type PosePoint = {
@@ -133,6 +142,15 @@ function getLandmarkConfidence(point: PosePoint | undefined) {
   return values.length ? Math.max(...values) : 0
 }
 
+function painLabel(score: number) {
+  if (score === 0) return 'No pain'
+  if (score <= 2) return 'Mild'
+  if (score <= 4) return 'Moderate'
+  if (score <= 7) return 'Severe'
+  if (score <= 9) return 'Very severe'
+  return 'Worst pain'
+}
+
 function KneeSession({ onBack, onComplete }: KneeSessionProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -159,6 +177,11 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
   const [trackingStatus, setTrackingStatus] = useState('Waiting for camera')
   const [error, setError] = useState('')
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>('ready')
+  const [beforeFeeling, setBeforeFeeling] = useState<number | null>(null)
+  const [beforeComment, setBeforeComment] = useState('')
+  const [duringFeeling, setDuringFeeling] = useState<number | null>(null)
+  const [duringComment, setDuringComment] = useState('')
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
   const [repetitions, setRepetitions] = useState(0)
   const [setNumber, setSetNumber] = useState(1)
@@ -700,10 +723,9 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
           )
 
           speak(
-            'Recovery period complete. Your session report is ready.'
+            'Recovery period complete. Please share how you felt during the exercise.'
           )
 
-          saveAndSendReport()
         }
       }
     }, 250)
@@ -766,11 +788,18 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
 
       dataQualityNote:
         'Angles are 2D webcam estimates and are not clinically validated. Camera position, occlusion, body orientation, and landmark quality can affect measurements.',
-
+      patientFeedback: {
+        before: { rating: beforeFeeling, label: beforeFeeling === null ? 'Not provided' : painLabel(beforeFeeling), comment: beforeComment },
+        during: { rating: duringFeeling, label: duringFeeling === null ? 'Not provided' : painLabel(duringFeeling), comment: duringComment },
+      },
       aiAnalysisInput: {
         purpose:
           'Provide an OT-facing descriptive summary of this exercise session, not a diagnosis or treatment recommendation.',
-
+        priorityPatientFeedback: {
+          beforeExercise: { rating: beforeFeeling, label: beforeFeeling === null ? 'Not provided' : painLabel(beforeFeeling), comment: beforeComment },
+          duringExercise: { rating: duringFeeling, label: duringFeeling === null ? 'Not provided' : painLabel(duringFeeling), comment: duringComment },
+          interpretation: "Treat patient-reported feelings and comments as high-priority context for OT review. Report them clearly, compare before and during ratings, and do not infer a diagnosis from the patient's self-reported pain or discomfort rating.",
+        },
         metrics: [
           'completed repetitions',
           'per-repetition peak knee angle',
@@ -782,7 +811,7 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
         ],
 
         instruction:
-          'Describe observed performance and data limitations. Do not infer pain, strength, diagnosis, or clinical range of motion.',
+          'Lead the summary with the patient-reported before and during exercise feedback. Highlight any lower rating or discomfort comment for OT review. Then describe observed performance and data limitations. Do not infer pain, strength, diagnosis, or clinical range of motion.',
       },
     }
 
@@ -803,9 +832,12 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
   }
 
   function startSession() {
-    if (!cameraOn) return
+    if (!cameraOn || beforeFeeling === null) return
 
     completionSentRef.current = false
+    setDuringFeeling(null)
+    setDuringComment('')
+    setFeedbackSubmitted(false)
 
     repAnglesRef.current = []
     setRepAngles([])
@@ -908,17 +940,6 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
     ...repAngles,
   ]
 
-  const bestAngle = allRepAngles.length
-    ? Math.max(...allRepAngles)
-    : null
-
-  const averageAngle = allRepAngles.length
-    ? Math.round(
-        allRepAngles.reduce((sum, value) => sum + value, 0) /
-          allRepAngles.length
-      )
-    : null
-
   return (
     <div className="dashboard">
       <header className="app-header">
@@ -944,6 +965,42 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
         <p className="session-subtitle">
           Sit sideways to the camera with your hip, knee and ankle visible.
         </p>
+
+        <section className="patient-feedback-card pre-exercise-feedback" aria-labelledby="before-feedback-title">
+          <h2 id="before-feedback-title">How do you feel right now?</h2>
+          <p>Choose a number from 0 to 10 for your pain or discomfort.</p>
+          <div className="pain-scale" role="group" aria-label="Pain or discomfort before exercise, from zero to ten">
+            {Array.from({ length: 11 }, (_, value) => (
+              <button
+                key={value}
+                type="button"
+                className={`pain-scale-button pain-level-${value}${beforeFeeling === value ? ' selected' : ''}`}
+                aria-label={`${value} out of 10`}
+                aria-pressed={beforeFeeling === value}
+                onClick={() => setBeforeFeeling(value)}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          <div className="pain-scale-anchors" aria-hidden="true">
+            <span><strong>0</strong>No pain</span>
+            <span><strong>5</strong>Moderate</span>
+            <span><strong>10</strong>Worst pain</span>
+          </div>
+          <label className="feedback-comment-label" htmlFor="before-feedback-comment">
+            <strong>Anything else your therapist should know?</strong>
+            <span>Optional</span>
+          </label>
+          <textarea
+            id="before-feedback-comment"
+            className="feedback-comment-input"
+            value={beforeComment}
+            onChange={(event) => setBeforeComment(event.target.value)}
+            rows={3}
+            placeholder="Example: My knee feels stiff this morning."
+          />
+        </section>
 
         {/* CAMERA AND MOVEMENT ANALYSIS SIDE BY SIDE */}
         <div className="session-layout">
@@ -984,8 +1041,7 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
               ) : (
                 <div className="camera-placeholder">
                   <div className="camera-symbol">◎</div>
-                  <strong>Your camera preview will appear here</strong>
-                  <p>Enable your camera to begin body tracking.</p>
+                  <button type="button" className="preview-enable-button" onClick={startCamera}>Enable camera</button>
                 </div>
               )}
             </div>
@@ -1000,21 +1056,7 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
 
             {error && <p className="camera-error">{error}</p>}
 
-            {!cameraOn ? (
-              <button
-                className="primary-action"
-                onClick={startCamera}
-              >
-                Enable camera →
-              </button>
-            ) : (
-              <button
-                className="secondary-action"
-                onClick={stopCamera}
-              >
-                Turn camera off
-              </button>
-            )}
+            {cameraOn && <button className="secondary-action" onClick={stopCamera}>Turn camera off</button>}
           </div>
 
         <section className="session-analysis-panel session-side-panel">
@@ -1059,19 +1101,6 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
               <strong>{setNumber}/{TARGET_SETS}</strong>
             </div>
 
-            <div className="analysis-metric">
-              <span>BEST EXTENSION</span>
-              <strong>
-                {bestAngle !== null ? `${bestAngle}°` : '--'}
-              </strong>
-            </div>
-
-            <div className="analysis-metric">
-              <span>AVERAGE EXTENSION</span>
-              <strong>
-                {averageAngle !== null ? `${averageAngle}°` : '--'}
-              </strong>
-            </div>
           </div>
 
           <p className="analysis-feedback">{movementMessage}</p>
@@ -1098,20 +1127,58 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
             </div>
           )}
 
-          {sessionStatus === 'completed' && (
-            <p className="analysis-feedback">
-              Session report saved for OT review.
-            </p>
+          {sessionStatus === 'completed' && !feedbackSubmitted && (
+            <section className="patient-feedback-card post-exercise-feedback" aria-labelledby="during-feedback-title">
+              <h3 id="during-feedback-title">How did you feel during the exercise?</h3>
+              <p>Choose a number from 0 to 10 for your pain or discomfort.</p>
+              <div className="pain-scale" role="group" aria-label="Pain or discomfort during exercise, from zero to ten">
+                {Array.from({ length: 11 }, (_, value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`pain-scale-button pain-level-${value}${duringFeeling === value ? ' selected' : ''}`}
+                    aria-label={`${value} out of 10`}
+                    aria-pressed={duringFeeling === value}
+                    onClick={() => setDuringFeeling(value)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+              <div className="pain-scale-anchors" aria-hidden="true">
+                <span><strong>0</strong>No pain</span>
+                <span><strong>5</strong>Moderate</span>
+                <span><strong>10</strong>Worst pain</span>
+              </div>
+              <label className="feedback-comment-label" htmlFor="during-feedback-comment">
+                <strong>Anything else your therapist should know?</strong>
+                <span>Optional</span>
+              </label>
+              <textarea
+                id="during-feedback-comment"
+                className="feedback-comment-input"
+                value={duringComment}
+                onChange={(event) => setDuringComment(event.target.value)}
+                rows={3}
+                placeholder="Example: My knee felt sore when I straightened it."
+              />
+              <button className="primary-action" disabled={duringFeeling === null} onClick={() => { setFeedbackSubmitted(true); saveAndSendReport('completed') }}>
+                Save feedback and finish
+              </button>
+            </section>
+          )}
+          {sessionStatus === 'completed' && feedbackSubmitted && (
+            <p className="analysis-feedback" role="status">Your feedback has been saved for your therapist.</p>
           )}
 
           <div className="analysis-controls">
             {sessionStatus === 'ready' && (
               <button
                 className="primary-action"
-                disabled={!cameraOn}
+                disabled={!cameraOn || beforeFeeling === null}
                 onClick={startSession}
               >
-                Start exercise session →
+                Start
               </button>
             )}
 
@@ -1142,12 +1209,12 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
               </button>
             )}
 
-            {sessionStatus === 'completed' && (
+            {sessionStatus === 'completed' && feedbackSubmitted && (
               <button
                 className="primary-action"
                 onClick={endSession}
               >
-                Return to dashboard →
+                Return to dashboard
               </button>
             )}
           </div>

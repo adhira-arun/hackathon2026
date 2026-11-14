@@ -34,8 +34,17 @@ export type NeckSessionReport = {
   repAngles: number[]
   movementMetrics: Record<string, number | number[]>
   dataQualityNote: string
+  patientFeedback: {
+    before: { rating: number | null; label: string; comment: string }
+    during: { rating: number | null; label: string; comment: string }
+  }
   aiAnalysisInput: {
     purpose: string
+    priorityPatientFeedback: {
+      beforeExercise: { rating: number | null; label: string; comment: string }
+      duringExercise: { rating: number | null; label: string; comment: string }
+      interpretation: string
+    }
     metrics: string[]
     instruction: string
   }
@@ -110,6 +119,15 @@ function headPitchProxy(landmarks: PosePoint[]) {
   return ((nose.y - earMid.y) / shoulderWidth) * 100
 }
 
+function painLabel(score: number) {
+  if (score === 0) return 'No pain'
+  if (score <= 2) return 'Mild'
+  if (score <= 4) return 'Moderate'
+  if (score <= 7) return 'Severe'
+  if (score <= 9) return 'Very severe'
+  return 'Worst pain'
+}
+
 function speak(message: string) {
   if (!('speechSynthesis' in window)) return
   window.speechSynthesis.cancel()
@@ -136,6 +154,11 @@ function NeckSideBends({ onBack, onComplete }: Props) {
   const completionSentRef = useRef(false)
 
   const [cameraOn, setCameraOn] = useState(false)
+  const [beforeFeeling, setBeforeFeeling] = useState<number | null>(null)
+  const [beforeComment, setBeforeComment] = useState('')
+  const [duringFeeling, setDuringFeeling] = useState<number | null>(null)
+  const [duringComment, setDuringComment] = useState('')
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [trackingStatus, setTrackingStatus] = useState('Waiting for camera')
   const [error, setError] = useState('')
   const [status, setStatus] = useState<SessionStatus>('ready')
@@ -385,10 +408,19 @@ function NeckSideBends({ onBack, onComplete }: Props) {
         rightTiltDegrees: records.map((item) => item.right),
       },
       dataQualityNote: '2D webcam pose estimates are experimental and are not clinically validated. Camera angle, head rotation, landmark visibility, and posture can affect readings.',
+      patientFeedback: {
+        before: { rating: beforeFeeling, label: beforeFeeling === null ? 'Not provided' : painLabel(beforeFeeling), comment: beforeComment },
+        during: { rating: duringFeeling, label: duringFeeling === null ? 'Not provided' : painLabel(duringFeeling), comment: duringComment },
+      },
       aiAnalysisInput: {
         purpose: 'Provide an OT-facing descriptive summary of observed neck side-bend movement, not a diagnosis or treatment recommendation.',
+        priorityPatientFeedback: {
+          beforeExercise: { rating: beforeFeeling, label: beforeFeeling === null ? 'Not provided' : painLabel(beforeFeeling), comment: beforeComment },
+          duringExercise: { rating: duringFeeling, label: duringFeeling === null ? 'Not provided' : painLabel(duringFeeling), comment: duringComment },
+          interpretation: "Treat patient-reported feelings and comments as high-priority context for OT review. Report them clearly, compare before and during ratings, and do not infer a diagnosis from the patient's self-reported pain or discomfort rating.",
+        },
         metrics: ['completed repetitions', 'left tilt movement proxy per rep', 'right tilt movement proxy per rep', 'left/right consistency', 'set-by-set performance', 'data quality limitations'],
-        instruction: 'Describe observed movement trends and measurement limitations. Do not infer pain, strength, diagnosis, or clinical range of motion.',
+        instruction: 'Lead the summary with patient-reported before and during exercise feedback. Then describe observed movement trends and measurement limitations. Do not infer pain, strength, diagnosis, or clinical range of motion.',
       },
     }
     try {
@@ -421,8 +453,7 @@ function NeckSideBends({ onBack, onComplete }: Props) {
           speak('Rest complete. Begin your next set when ready.')
         } else {
           updateStatus('completed')
-          setMovementMessage('Session complete. Your report is ready.')
-          saveReport()
+          setMovementMessage('Session complete. Please share how you felt during the exercise.')
         }
       }
     }, 250)
@@ -430,8 +461,11 @@ function NeckSideBends({ onBack, onComplete }: Props) {
   }, [status, restDuration, restPhase, setNumber])
 
   function startSession() {
-    if (!cameraOn) return
+    if (!cameraOn || beforeFeeling === null) return
     completionSentRef.current = false
+    setDuringFeeling(null)
+    setDuringComment('')
+    setFeedbackSubmitted(false)
     repDataRef.current = []
     setSetReports([])
     setRepetitions(0)
@@ -460,6 +494,15 @@ function NeckSideBends({ onBack, onComplete }: Props) {
     setMovementMessage('Return to a comfortable neutral position for recalibration.')
   }
 
+  function exitSession() {
+    if (statusRef.current === 'exercising' || statusRef.current === 'resting' || statusRef.current === 'paused') {
+      saveReport('incomplete')
+    }
+    window.speechSynthesis?.cancel()
+    stopCamera()
+    onBack()
+  }
+
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
@@ -471,55 +514,152 @@ function NeckSideBends({ onBack, onComplete }: Props) {
 
   useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), [])
 
+
+  const progress = (repetitions / TARGET_REPS) * 100
+  const latestRecord = repDataRef.current[repDataRef.current.length - 1]
+
   return (
-    <div className="dashboard session-dashboard">
+    <div className="dashboard">
       <header className="app-header">
         <div className="header-brand"><span className="mini-mark">k.</span><span>kinetiq</span></div>
-        <button className="logout-button" onClick={onBack}>← Back to dashboard</button>
+        <button className="logout-button" onClick={exitSession}>Exit session</button>
       </header>
-      <main className="dashboard-content session-content">
-        <span className="eyebrow">CAMERA-TRACKED EXERCISE</span>
-        <h2>Neck Side Bends</h2>
-        <p className="dashboard-subtitle">Gently tilt toward each shoulder, returning to neutral between sides.</p>
+      <main className="session-content">
+        <button className="back-link" onClick={exitSession}>← Back to dashboard</button>
+        <span className="eyebrow">NECK REHABILITATION</span>
+        <h1>Neck Side Bends</h1>
+        <p className="session-subtitle">Face the camera with your head and both shoulders visible. Gently tilt toward each shoulder, returning to neutral between sides.</p>
+
+        <section className="patient-feedback-card pre-exercise-feedback" aria-labelledby="before-feedback-title">
+          <h2 id="before-feedback-title">How do you feel right now?</h2>
+          <p>Choose a number from 0 to 10 for your pain or discomfort.</p>
+          <div className="pain-scale" role="group" aria-label="Pain or discomfort before exercise, from zero to ten">
+            {Array.from({ length: 11 }, (_, value) => (
+              <button key={value} type="button"
+                className={`pain-scale-button pain-level-${value}${beforeFeeling === value ? ' selected' : ''}`}
+                aria-label={`${value} out of 10`} aria-pressed={beforeFeeling === value}
+                onClick={() => setBeforeFeeling(value)}>{value}</button>
+            ))}
+          </div>
+          <div className="pain-scale-anchors" aria-hidden="true">
+            <span><strong>0</strong>No pain</span><span><strong>5</strong>Moderate</span><span><strong>10</strong>Worst pain</span>
+          </div>
+          <label className="feedback-comment-label" htmlFor="before-feedback-comment">
+            <strong>Anything else your therapist should know?</strong><span>Optional</span>
+          </label>
+          <textarea id="before-feedback-comment" className="feedback-comment-input"
+            value={beforeComment} onChange={(event) => setBeforeComment(event.target.value)}
+            rows={3} placeholder="Example: My neck feels stiff this morning." />
+        </section>
+
         <div className="session-layout">
-          <section className="session-camera-panel">
+          <div className="camera-card">
+            <div className="camera-heading">
+              <div><strong>Live movement tracking</strong><p>Keep your head and both shoulders visible.</p></div>
+              <span className={`camera-status ${cameraOn ? 'active' : ''}`}>{cameraOn ? 'Camera connected' : 'Camera off'}</span>
+            </div>
             <div className="camera-preview">
-              <div className="pose-stage">
-                <video ref={videoRef} autoPlay muted playsInline className="camera-video" />
-                <canvas ref={canvasRef} className="pose-canvas" />
-              </div>
+              {cameraOn ? (
+                <div className="pose-stage">
+                  <video ref={videoRef} autoPlay playsInline muted className="camera-video" />
+                  <canvas ref={canvasRef} className="pose-canvas" />
+                </div>
+              ) : (
+                <div className="camera-placeholder">
+                  <div className="camera-symbol">◎</div>
+                  <button type="button" className="preview-enable-button" onClick={startCamera}>Enable camera</button>
+                </div>
+              )}
             </div>
             <div className="tracking-indicator"><span className="tracking-dot" /><span>{trackingStatus}</span></div>
             {error && <p className="camera-error">{error}</p>}
-            {!cameraOn ? <button className="primary-action" onClick={startCamera}>Enable camera →</button> : <button className="secondary-action" onClick={stopCamera}>Turn camera off</button>}
-          </section>
+            {cameraOn && <button className="secondary-action" onClick={stopCamera}>Turn camera off</button>}
+          </div>
+
           <section className="session-analysis-panel session-side-panel">
             <div className="analysis-heading">
-              <div><span className="eyebrow">MOVEMENT ANALYSIS</span><h2>Live tracking</h2></div>
-              <span className={`camera-status ${status === 'exercising' ? 'active' : ''}`}>{status}</span>
+              <div><span className="eyebrow">MOVEMENT ANALYSIS</span><h2>Neck Side Bends</h2></div>
+              <span className={`camera-status ${status === 'exercising' ? 'active' : ''}`}>
+                {status === 'exercising' ? 'Tracking active' : status === 'resting' ? 'Rest period' : status === 'completed' ? 'Complete' : status === 'paused' ? 'Paused' : 'Ready'}
+              </span>
             </div>
             <div className="analysis-metrics">
-              <div className="analysis-metric"><span>LIVE HEAD TILT</span><strong>{liveAngle !== null ? `${liveAngle.toFixed(1)}°` : '--'}</strong></div>
+              <div className="analysis-metric"><span>LIVE HEAD TILT</span><strong>{liveMovement !== null ? `${liveMovement.toFixed(1)}` : '--'}</strong></div>
               <div className="analysis-metric"><span>REPETITIONS</span><strong>{repetitions}/{TARGET_REPS}</strong></div>
               <div className="analysis-metric"><span>SET</span><strong>{setNumber}/{TARGET_SETS}</strong></div>
-              <div className="analysis-metric"><span>LEFT TILT</span><strong>{repDataRef.current.length ? `${repDataRef.current[repDataRef.current.length - 1].left.toFixed(1)}°` : '--'}</strong></div>
-              <div className="analysis-metric"><span>RIGHT TILT</span><strong>{repDataRef.current.length ? `${repDataRef.current[repDataRef.current.length - 1].right.toFixed(1)}°` : '--'}</strong></div>
+              <div className="analysis-metric"><span>LEFT TILT</span><strong>{latestRecord ? `${latestRecord.left.toFixed(1)}` : '--'}</strong></div>
+              <div className="analysis-metric"><span>RIGHT TILT</span><strong>{latestRecord ? `${latestRecord.right.toFixed(1)}` : '--'}</strong></div>
             </div>
             <p className="analysis-feedback">{movementMessage}</p>
-            {status === 'resting' && <div className="rest-panel"><span className="eyebrow">REST PERIOD</span><strong>{restRemaining}s</strong></div>}
-            {status === 'completed' && <p className="analysis-feedback">Session report saved for OT review.</p>}
+            <div className="analysis-progress"><div style={{ width: `${progress}%` }} /></div>
+            {status === 'resting' && <div className="rest-panel">
+              <span className="eyebrow">{restPhase === 'set' ? 'REST BETWEEN SETS' : 'POST-EXERCISE RECOVERY'}</span>
+              <strong>{restRemaining}s</strong>
+              <p>{restPhase === 'set' ? 'Your next set begins automatically when the timer ends.' : 'Your session report will be finalized after recovery.'}</p>
+            </div>}
+            {status === 'completed' && !feedbackSubmitted && (
+              <section className="patient-feedback-card post-exercise-feedback" aria-labelledby="during-feedback-title">
+                <h3 id="during-feedback-title">How did you feel during the exercise?</h3>
+                <p>Choose a number from 0 to 10 for your pain or discomfort.</p>
+                <div className="pain-scale" role="group" aria-label="Pain or discomfort during exercise, from zero to ten">
+                  {Array.from({ length: 11 }, (_, value) => (
+                    <button key={value} type="button"
+                      className={`pain-scale-button pain-level-${value}${duringFeeling === value ? ' selected' : ''}`}
+                      aria-label={`${value} out of 10`} aria-pressed={duringFeeling === value}
+                      onClick={() => setDuringFeeling(value)}>{value}</button>
+                  ))}
+                </div>
+                <div className="pain-scale-anchors" aria-hidden="true">
+                  <span><strong>0</strong>No pain</span><span><strong>5</strong>Moderate</span><span><strong>10</strong>Worst pain</span>
+                </div>
+                <label className="feedback-comment-label" htmlFor="during-feedback-comment">
+                  <strong>Anything else your therapist should know?</strong><span>Optional</span>
+                </label>
+                <textarea id="during-feedback-comment" className="feedback-comment-input"
+                  value={duringComment} onChange={(event) => setDuringComment(event.target.value)}
+                  rows={3} placeholder="Example: I felt tightness during the movement." />
+                <button className="primary-action" disabled={duringFeeling === null}
+                  onClick={() => { setFeedbackSubmitted(true); saveReport('completed') }}>
+                  Save feedback and finish
+                </button>
+              </section>
+            )}
+            {status === 'completed' && feedbackSubmitted && <p className="analysis-feedback" role="status">Your feedback has been saved for your therapist.</p>}
             <div className="analysis-controls">
-              {status === 'ready' && <button className="primary-action" disabled={!cameraOn} onClick={startSession}>Start exercise session →</button>}
+              {status === 'ready' && <button className="primary-action" disabled={!cameraOn || beforeFeeling === null} onClick={startSession}>Start</button>}
               {status === 'exercising' && <button className="primary-action" onClick={pauseSession}>Pause session</button>}
-              {status === 'paused' && <button className="primary-action" onClick={resumeSession}>Resume session</button>}
-              {status !== 'ready' && status !== 'completed' && <button className="secondary-action" onClick={() => saveReport('incomplete')}>End session</button>}
+              {status === 'paused' && <button className="primary-action" onClick={resumeSession}>Resume session →</button>}
+              {status === 'resting' && <button className="primary-action" onClick={pauseSession}>Pause session</button>}
+              {status === 'completed' && feedbackSubmitted && <button className="primary-action" onClick={exitSession}>Return to dashboard</button>}
             </div>
           </section>
         </div>
-        <p className="demo-note">Experimental 2D webcam movement tracking, not a clinically validated cervical range-of-motion measurement. Move gently and follow the therapist's prescribed range.</p>
+
+        <aside className="exercise-guide">
+          <span className="eyebrow">YOUR MOVEMENT GUIDE</span>
+          <h2>How to perform the movement</h2>
+          <p className="guide-intro">Sit comfortably with your shoulders relaxed. Gently bring one ear toward the same-side shoulder without lifting the shoulder, return to neutral, then repeat on the other side.</p>
+          <div className="movement-diagram" role="img" aria-label="Neck movement guide">
+            <div className="diagram-step">
+              <svg viewBox="0 0 150 145" aria-hidden="true"><circle cx="75" cy="28" r="17" /><path d="M75 45 L75 102 M75 58 L45 80 M75 58 L105 80 M45 80 L45 116 M105 80 L105 116 M45 116 L105 116" /></svg>
+              <strong>1. Left tilt</strong><span>Bring your left ear gently toward your left shoulder.</span>
+            </div>
+            <div className="diagram-arrow">→</div>
+            <div className="diagram-step">
+              <svg viewBox="0 0 150 145" aria-hidden="true"><circle cx="75" cy="28" r="17" /><path d="M75 45 L75 102 M75 58 L45 80 M75 58 L105 80 M45 80 L45 116 M105 80 L105 116 M45 116 L105 116" /></svg>
+              <strong>2. Right tilt</strong><span>Return to center, then tilt gently to the right.</span>
+            </div>
+          </div>
+          <div className="guide-tip"><strong>Movement quality</strong><p>Move slowly, keep your shoulders relaxed, and do not force your neck beyond a comfortable range.</p></div>
+          <div className="camera-position-tip"><span className="eyebrow">CAMERA POSITION</span><p>Place the camera at face height, a few feet away. Face the camera so your head and both shoulders remain visible.</p></div>
+          <div className="guide-tip"><strong>OT-prescribed rest</strong><p>{restDuration} seconds between sets and after the exercise.</p></div>
+        </aside>
+
+        <p className="demo-note">Experimental 2D webcam movement tracking. These movement proxies are not clinically validated cervical range-of-motion measurements. Camera position, head rotation and landmark visibility can affect readings. Follow your therapist's instructions.</p>
       </main>
     </div>
   )
+
 }
 
 export default NeckSideBends

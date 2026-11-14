@@ -106,6 +106,19 @@ function App() {
   const [account, setAccount] = useState<Account | null>(null)
   const [error, setError] = useState('')
   const [reports, setReports] = useState<SessionReport[]>(readReports)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('kinetiq.theme')
+    return saved === 'dark' ? 'dark' : 'light'
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('kinetiq.theme', theme)
+  }, [theme])
+
+  function toggleTheme() {
+    setTheme((current) => current === 'light' ? 'dark' : 'light')
+  }
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
   event.preventDefault()
@@ -151,6 +164,18 @@ function App() {
     return (
       <main className="login-page">
         <div className="login-container">
+          <div className="login-theme-row">
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              aria-pressed={theme === 'dark'}
+            >
+              <span aria-hidden="true">{theme === 'light' ? '🌙' : '☀️'}</span>
+              {theme === 'light' ? 'Dark mode' : 'Light mode'}
+            </button>
+          </div>
           <Brand />
           <section className="login-card">
             <div className="welcome">
@@ -176,7 +201,7 @@ function App() {
                 placeholder="Enter your password"
                 required
               />
-              {error && <p className="error-message">{error}</p>}
+              {error && <p className="error-message" role="alert">{error}</p>}
               <button type="submit">Sign in <span>→</span></button>
             </form>
             <div className="login-footer">
@@ -197,6 +222,8 @@ function App() {
       <PatientDashboard
         account={account}
         logout={logout}
+        theme={theme}
+        toggleTheme={toggleTheme}
         onReport={(report) => setReports((old) => [...old, report])}
       />
     )
@@ -207,6 +234,8 @@ function App() {
       <NeckDashboard
         account={account}
         logout={logout}
+        theme={theme}
+        toggleTheme={toggleTheme}
         onReport={(report) => setReports((old) => [...old, report])}
       />
     )
@@ -217,6 +246,8 @@ function App() {
       account={account}
       logout={logout}
       reports={reports}
+      theme={theme}
+      toggleTheme={toggleTheme}
       onReportsRefresh={() => setReports(readReports())}
     />
   )
@@ -251,10 +282,14 @@ function Header({
   name,
   role,
   logout,
+  theme,
+  toggleTheme,
 }: {
   name: string
   role: string
   logout: () => void
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
 }) {
   return (
     <header className="app-header">
@@ -264,6 +299,16 @@ function Header({
       </div>
       <div className="header-right">
         <span className="user-label">{name} · {role}</span>
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          aria-pressed={theme === 'dark'}
+        >
+          <span aria-hidden="true">{theme === 'light' ? '🌙' : '☀️'}</span>
+          {theme === 'light' ? 'Dark mode' : 'Light mode'}
+        </button>
         <button className="logout-button" onClick={logout}>Sign out</button>
       </div>
     </header>
@@ -273,10 +318,14 @@ function Header({
 function PatientDashboard({
   account,
   logout,
+  theme,
+  toggleTheme,
   onReport,
 }: {
   account: Account
   logout: () => void
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   onReport: (report: KneeSessionReport) => void
 }) {
   const [showSession, setShowSession] = useState(false)
@@ -355,44 +404,32 @@ function PatientDashboard({
   if (selectedExercise && selectedDay !== null) {
     return (
       <div className="dashboard">
-        <Header name={account.name} role="Patient" logout={logout} />
+        <Header name={account.name} role="Patient" logout={logout} theme={theme} toggleTheme={toggleTheme} />
         <main className="dashboard-content">
           <button className="back-link" onClick={() => setSelectedDay(null)}>
             ← Back to weekly plan
           </button>
 
           <span className="eyebrow">
-            {selectedExercise.day.toUpperCase()} · KNEE REHABILITATION
+            {selectedExercise.day.toUpperCase()} · KNEE EXERCISE
           </span>
           <h2>{selectedExercise.exercise}</h2>
-          <p className="dashboard-subtitle">
-            Your scheduled rehabilitation activity.
-          </p>
 
           <section className="program-card">
             <div>
-              <span className="eyebrow">SCHEDULED EXERCISE</span>
-              <h3>2 sets × 10 repetitions</h3>
-              <p>Follow your occupational therapist's instructions.</p>
+              <span className="eyebrow">YOUR EXERCISE</span>
+              <h3>2 sets of 10</h3>
+              <p>Follow the steps from your therapist.</p>
             </div>
           </section>
 
           {selectedExercise.type === 'tracked' ? (
             <>
-              <p className="demo-note">
-                This exercise uses Kinetiq's camera-based movement tracking.
-              </p>
               <button
                 className="primary-action"
                 onClick={() => setShowSession(true)}
               >
-                {completedDays.includes(selectedDay)
-                  ? selectedExercise.exercise === 'Standing Knee Raises'
-                    ? 'Replay standing knee raises →'
-                    : 'Replay seated knee extension →'
-                  : selectedExercise.exercise === 'Standing Knee Raises'
-                    ? 'Start standing knee raises →'
-                    : 'Start seated knee extension →'}
+                {completedDays.includes(selectedDay) ? 'Replay' : 'Start'}
               </button>
             </>
           ) : (
@@ -436,7 +473,7 @@ function PatientDashboard({
 
   return (
     <div className="dashboard">
-      <Header name={account.name} role="Patient" logout={logout} />
+      <Header name={account.name} role="Patient" logout={logout} theme={theme} toggleTheme={toggleTheme} />
       <main className="dashboard-content">
         <span className="eyebrow">YOUR REHABILITATION JOURNEY</span>
         <h2>Welcome, {account.name.split(' ')[0]}.</h2>
@@ -460,7 +497,14 @@ function PatientDashboard({
             </div>
             <strong>{completedCount}/7</strong>
           </div>
-          <div className="weekly-progress-track">
+          <div
+            className="weekly-progress-track"
+            role="progressbar"
+            aria-label="Weekly exercise progress"
+            aria-valuenow={completedCount}
+            aria-valuemin={0}
+            aria-valuemax={7}
+          >
             <div style={{ width: `${progress}%` }} />
           </div>
           <p>{completedCount} of 7 days completed this week.</p>
@@ -517,19 +561,19 @@ function PatientDashboard({
 
                 <div className="weekly-day-info">
                   <strong>{item.exercise}</strong>
-                  <small>
-                    2 sets × 10 reps ·{' '}
-                    {item.type === 'tracked'
-                      ? 'Camera tracked'
-                      : 'Manual checkoff'}
-                  </small>
-                  <span className="weekly-day-status">
+                  <small>2 sets × 10 reps</small>
+                  <span className={`weekly-day-status-label ${isCompleted ? 'is-completed' : isToday ? 'is-today' : ''}`}>
                     {isCompleted
-                      ? 'Completed · Demo replay available'
-                      : isFuture
-                        ? `${availabilityLabel} · Demo access`
-                        : availabilityLabel}
+                      ? 'Completed'
+                      : isToday
+                        ? 'Ready to start'
+                        : isFuture
+                          ? 'Coming up'
+                          : 'Available'}
                   </span>
+                  {isCompleted && (
+                    <span className="weekly-day-replay">Demo replay available</span>
+                  )}
                 </div>
 
                 <div className="weekly-day-indicator">
@@ -561,10 +605,14 @@ function PatientDashboard({
 function NeckDashboard({
   account,
   logout,
+  theme,
+  toggleTheme,
   onReport,
 }: {
   account: Account
   logout: () => void
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   onReport: (report: NeckSessionReport) => void
 }) {
   const [selectedExercise, setSelectedExercise] = useState<'side-bends' | 'extension' | null>(null)
@@ -610,7 +658,7 @@ function NeckDashboard({
 
   return (
     <div className="dashboard">
-      <Header name={account.name} role="Patient" logout={logout} />
+      <Header name={account.name} role="Patient" logout={logout} theme={theme} toggleTheme={toggleTheme} />
       <main className="dashboard-content">
         <span className="eyebrow">YOUR REHABILITATION JOURNEY</span>
         <h2>Welcome, {account.name.split(' ')[0]}.</h2>
@@ -637,7 +685,7 @@ function NeckDashboard({
           <div className="weekly-progress-track">
             <div style={{ width: '66.67%' }} />
           </div>
-          <p>2 camera-tracked exercises available in your demonstration program.</p>
+          <p>Complete your exercises to track your progress.</p>
         </section>
 
         <div className="weekly-plan-heading">
@@ -658,7 +706,7 @@ function NeckDashboard({
                 if (exercise.id === 'extension') setSelectedExercise('extension')
               }}
               disabled={!exercise.available}
-              aria-label={`${exercise.title}. ${exercise.available ? 'Start exercise.' : 'Assigned exercise, not yet camera tracked.'}`}
+              aria-label={`${exercise.title}. ${exercise.available ? 'Start exercise.' : 'Assigned exercise, not available yet.'}`}
             >
               <span className="neck-exercise-number">{exercise.number}</span>
               <span className="neck-exercise-info">
@@ -1000,11 +1048,15 @@ function OtDashboard({
   account,
   logout,
   reports,
+  theme,
+  toggleTheme,
   onReportsRefresh,
 }: {
   account: Account
   logout: () => void
   reports: SessionReport[]
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   onReportsRefresh: () => void
 }) {
   const patients = accounts.filter(
@@ -1046,6 +1098,8 @@ function OtDashboard({
         name={account.name}
         role="Occupational Therapist"
         logout={logout}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       <main className="dashboard-content ot-content">
@@ -1206,6 +1260,21 @@ function OtDashboard({
                   <NeckReportDetail report={selectedReport} />
                 ) : (
                   <>
+                    <section className="ot-patient-feedback" aria-labelledby="patient-feedback-heading">
+                      <h4 id="patient-feedback-heading">Patient feedback — priority for OT review</h4>
+                      <div className="ot-feedback-grid">
+                        <div>
+                          <strong>Before exercise</strong>
+                          <span>{selectedReport.patientFeedback?.before?.label ?? 'Not provided'}{selectedReport.patientFeedback?.before?.rating ? ` (${selectedReport.patientFeedback.before.rating}/5)` : ''}</span>
+                          {selectedReport.patientFeedback?.before?.comment && <p>{selectedReport.patientFeedback.before.comment}</p>}
+                        </div>
+                        <div>
+                          <strong>During exercise</strong>
+                          <span>{selectedReport.patientFeedback?.during?.label ?? 'Not provided'}{selectedReport.patientFeedback?.during?.rating ? ` (${selectedReport.patientFeedback.during.rating}/5)` : ''}</span>
+                          {selectedReport.patientFeedback?.during?.comment && <p>{selectedReport.patientFeedback.during.comment}</p>}
+                        </div>
+                      </div>
+                    </section>
                     <div className="report-metrics">
                       <div>
                         <span>REPS COMPLETED</span>
@@ -1237,6 +1306,7 @@ function OtDashboard({
                         patientName: selectedReport.patientName,
                         exercise: selectedReport.exercise,
                         sets: selectedReport.sets,
+                        patientFeedback: selectedReport.patientFeedback,
                         bestExtensionAngle: selectedReport.bestExtensionAngle,
                         averageExtensionAngle: selectedReport.averageExtensionAngle,
                         aiAnalysisInput: selectedReport.aiAnalysisInput,

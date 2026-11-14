@@ -2196,3 +2196,896 @@ form button span {
   }
 }
 
+
+
+/* =========================================================
+   KINETIQ ACCESSIBILITY SYSTEM
+   WCAG AA-oriented colors, 14pt minimum text, light/dark themes
+   ========================================================= */
+
+:root {
+  color-scheme: light;
+  --page: #F7F5EF;
+  --surface: #FFFFFF;
+  --surface-alt: #ECEAE3;
+  --text: #202124;
+  --muted: #45484D;
+  --border: #767676;
+  --primary: #123B63;
+  --primary-hover: #0B2D4D;
+  --primary-text: #FFFFFF;
+  --success: #146B3A;
+  --success-bg: #E7F2EA;
+  --danger: #8B1E1E;
+  --danger-bg: #FCE8E6;
+  --warning: #754900;
+  --warning-bg: #FFF2CC;
+  --focus: #005FCC;
+  --shadow: rgba(0, 0, 0, 0.12);
+  font-size: 18.67px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #171C24;
+  --surface: #252D38;
+  --surface-alt: #303A47;
+  --text: #F5F5F5;
+  --muted: #D5DCE5;
+  --border: #8994A3;
+  --primary: #315E91;
+  --primary-hover: #4778AE;
+  --primary-text: #FFFFFF;
+  --success: #6EE7A0;
+  --success-bg: #183B2A;
+  --danger: #FF8A80;
+  --danger-bg: #4A2424;
+  --warning: #FFD166;
+  --warning-bg: #493817;
+  --focus: #8CC8FF;
+  --shadow: rgba(0, 0, 0, 0.35);
+}
+
+html {
+  font-size: 18.67px;
+  background: var(--page);
+}
+
+body,
+.dashboard,
+.login-page {
+  background: var(--page) !important;
+  color: var(--text) !important;
+  font-size: 18.67px !important;
+  line-height: 1.55;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+p, li, label, input, button, small, span, td, th, summary {
+  font-size: max(18.67px, 1em);
+}
+
+h1 { font-size: clamp(2.2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); }
+h3 { font-size: clamp(1.45rem, 3vw, 1.9rem); }
+h4 { font-size: 1.3rem; }
+
+p, .welcome p, .dashboard-subtitle, .session-subtitle,
+.program-card p, .exercise-row p, .demo-note,
+.ot-section-subtitle, .ot-patient-main span, .ot-patient-main small,
+.ot-recent-row small, .ot-recent-row > span:last-child,
+.guide-intro, .diagram-step span, .guide-tip p,
+.camera-position-tip p, .analysis-feedback, .rest-panel p,
+.report-card p, .report-card span, .report-set p,
+.neck-report-empty, .neck-report-disclaimer, .support-text {
+  color: var(--muted) !important;
+  font-size: 18.67px !important;
+  line-height: 1.55;
+}
+
+.eyebrow,
+.brand > p,
+.login-footer,
+.stat-card span,
+.analysis-metric span,
+.report-metrics span,
+.neck-report-stat > span,
+.neck-report-comparison-top span,
+.neck-report-table th,
+.weekly-day-name small,
+.weekly-day-info > small,
+.weekly-day-status,
+.neck-exercise-number,
+.neck-report-unit {
+  color: var(--muted) !important;
+  font-size: 18.67px !important;
+  letter-spacing: normal !important;
+  text-transform: none;
+  font-weight: 700;
+}
+
+.brand h1,
+.header-brand,
+.welcome h2,
+.dashboard-content h2,
+.program-card h3,
+.section-heading,
+.ot-section-header h3,
+.session-content h1,
+.analysis-heading h2,
+.rest-panel strong,
+.exercise-guide h2,
+.ot-settings-card h3,
+.report-detail h3,
+.report-metrics strong,
+.report-detail h4,
+.session-exercises h2,
+.weekly-progress-heading h3,
+.weekly-plan-heading .section-heading,
+.neck-exercise-info strong,
+.neck-report-stat strong,
+.neck-report-comparison-top strong {
+  color: var(--text) !important;
+}
+
+.login-card,
+.app-header,
+.stat-card,
+.patient-card,
+.tool-card,
+.program-card,
+.session-analysis-panel,
+.camera-card,
+.exercise-guide,
+.ot-settings-card,
+.report-detail,
+.empty-reports,
+.report-card,
+.weekly-progress-card,
+.weekly-day-card,
+.neck-exercise-card,
+.neck-report-stat,
+.neck-report-section,
+.ot-patient-card,
+.ot-overview-card,
+.ot-patient-profile,
+.report-raw-details {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 4px 16px var(--shadow);
+}
+
+.program-card,
+.analysis-metric,
+.rest-panel,
+.movement-diagram,
+.guide-tip,
+.camera-position-tip,
+.report-metrics > div,
+.report-json,
+.neck-report-table th,
+.report-raw-details,
+.weekly-day-card.completed,
+.weekly-day-card.future-day,
+.neck-exercise-card,
+.neck-report-stat {
+  background: var(--surface-alt) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+.brand-mark,
+.mini-mark,
+.program-icon,
+.exercise-number,
+.weekly-day-name,
+.weekly-day-info strong,
+.weekly-day-indicator,
+.neck-exercise-info strong,
+.neck-exercise-number,
+.ot-patient-main strong,
+.ot-recent-row strong,
+.patient-info strong,
+.patient-info span,
+.patient-info small,
+.status-label,
+.report-card,
+.report-card strong,
+.report-metrics strong,
+.neck-report-table td,
+.neck-report-quality,
+.analysis-metric strong,
+.stat-card strong {
+  color: var(--text) !important;
+}
+
+.status-label,
+.neck-report-quality.valid,
+.neck-report-quality.review {
+  background: var(--success-bg) !important;
+  color: var(--success) !important;
+  border: 1px solid var(--success) !important;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+button,
+.primary-action,
+.secondary-action,
+.logout-button,
+.theme-toggle,
+.weekly-day-card,
+.neck-exercise-card,
+.ot-patient-card,
+.ot-recent-row,
+.report-card {
+  min-height: 48px;
+  font-size: 18.67px !important;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-action,
+form button {
+  background: var(--primary) !important;
+  color: var(--primary-text) !important;
+  border: 2px solid var(--primary) !important;
+  border-radius: 8px;
+  min-height: 56px;
+  padding: 12px 20px;
+  letter-spacing: normal;
+}
+
+.primary-action:hover,
+form button:hover {
+  background: var(--primary-hover) !important;
+}
+
+.secondary-action,
+.logout-button,
+.theme-toggle {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.login-theme-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.header-right {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.user-label {
+  color: var(--text) !important;
+}
+
+input,
+textarea,
+select,
+form input,
+.rest-setting-row input {
+  min-height: 48px;
+  padding: 10px 12px;
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 6px;
+  font-size: 18.67px !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted) !important;
+  opacity: 1;
+}
+
+form label,
+.ot-settings-card label {
+  color: var(--text) !important;
+  font-size: 18.67px !important;
+  font-weight: 700;
+}
+
+.error-message,
+.camera-error {
+  color: var(--danger) !important;
+  background: var(--danger-bg);
+  border: 2px solid var(--danger);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 18.67px !important;
+}
+
+.analysis-progress,
+.weekly-progress-track,
+.neck-report-bar-track,
+.neck-report-set-track {
+  background: var(--surface-alt) !important;
+  border: 1px solid var(--border);
+  min-height: 12px;
+}
+
+.analysis-progress div,
+.weekly-progress-track > div,
+.neck-report-bar-fill,
+.neck-report-set-track > div {
+  background: var(--success) !important;
+}
+
+.weekly-day-card.completed,
+.weekly-day-card.current-day {
+  border: 3px solid var(--primary) !important;
+}
+
+.weekly-day-card.current-day {
+  background: var(--surface-alt) !important;
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.weekly-day-card.completed .weekly-day-status,
+.weekly-day-card.current-day .weekly-day-status,
+.weekly-day-card.completed .weekly-day-name span,
+.weekly-day-card.completed .weekly-day-info strong {
+  color: var(--text) !important;
+}
+
+.weekly-day-indicator,
+.neck-exercise-indicator,
+.patient-avatar,
+.ot-patient-avatar {
+  background: var(--surface-alt) !important;
+  color: var(--text) !important;
+  border: 2px solid var(--border);
+}
+
+a,
+.back-link,
+.ot-back-link {
+  color: var(--primary) !important;
+  font-size: 18.67px !important;
+  font-weight: 700;
+}
+
+:root[data-theme="dark"] a,
+:root[data-theme="dark"] .back-link,
+:root[data-theme="dark"] .ot-back-link {
+  color: #A9D3FF !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 4px solid var(--focus) !important;
+  outline-offset: 3px !important;
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  border-style: dashed !important;
+}
+
+table,
+th,
+td,
+.report-set,
+.exercise-list,
+.exercise-row,
+.weekly-day-status,
+.ot-recent-row {
+  border-color: var(--border) !important;
+}
+
+.chart-axis-label,
+.chart-description,
+.angle-chart-caption,
+.chart-legend-dot,
+.chart-grid-line,
+.chart-axis-line {
+  color: var(--text) !important;
+  fill: var(--text);
+}
+
+.camera-preview,
+.pose-stage,
+.pose-stage .camera-video {
+  background: #111827 !important;
+}
+
+.camera-placeholder {
+  color: #FFFFFF !important;
+}
+
+.camera-placeholder p {
+  color: #FFFFFF !important;
+  font-size: 18.67px !important;
+}
+
+.camera-status,
+.tracking-indicator {
+  color: var(--text) !important;
+  background: var(--surface-alt) !important;
+  font-size: 18.67px !important;
+}
+
+.camera-status.active {
+  color: var(--success) !important;
+  background: var(--success-bg) !important;
+  border: 1px solid var(--success);
+}
+
+.login-footer {
+  border-color: var(--border) !important;
+}
+
+@media (max-width: 760px) {
+  .app-header,
+  .ot-dashboard .app-header {
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 16px !important;
+  }
+
+  .header-right {
+    justify-content: center;
+  }
+
+  .login-card {
+    padding: 24px 18px;
+  }
+
+  .weekly-checklist {
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* =========================================================
+   WEEKLY EXERCISE PLAN — CLEANER, ROOMIER ACCESSIBLE CARDS
+   ========================================================= */
+.dashboard:not(.ot-dashboard) .weekly-plan-heading {
+  margin: 0 0 18px;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-plan-heading .section-heading {
+  font-family: inherit;
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  line-height: 1.2;
+  margin-top: 6px;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-checklist {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(190px, 1fr));
+  gap: 14px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 4px 16px;
+  align-items: stretch;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 190px;
+  min-height: 330px;
+  padding: 20px 18px;
+  gap: 16px;
+  border: 2px solid var(--border) !important;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  text-align: left;
+  scroll-snap-align: start;
+  box-shadow: 0 4px 14px var(--shadow);
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-name {
+  min-height: 0;
+  gap: 5px;
+  color: var(--text) !important;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-name span {
+  color: var(--text) !important;
+  font-size: 20px !important;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-name small {
+  color: var(--text) !important;
+  font-size: 18.67px !important;
+  font-weight: 700;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-info {
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-info strong {
+  color: var(--text) !important;
+  font-size: 21px !important;
+  line-height: 1.3;
+  font-weight: 800;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-info > small {
+  color: var(--muted) !important;
+  font-size: 18.67px !important;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-status-label {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  width: auto;
+  max-width: 100%;
+  margin-top: auto;
+  padding: 8px 11px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-alt);
+  color: var(--text) !important;
+  font-size: 18.67px !important;
+  line-height: 1.25;
+  font-weight: 800;
+  white-space: normal;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-status-label.is-completed {
+  background: var(--success-bg);
+  color: var(--success) !important;
+  border-color: var(--success);
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-status-label.is-today {
+  background: var(--primary);
+  color: var(--primary-text) !important;
+  border-color: var(--primary);
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-replay {
+  display: block;
+  color: var(--muted) !important;
+  font-size: 18.67px !important;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-indicator {
+  align-self: flex-end;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  margin-top: 0;
+  border: 2px solid var(--border);
+  font-size: 22px;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-lock-symbol {
+  font-size: 20px;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-card.completed {
+  background: var(--surface-alt) !important;
+  border-color: var(--success) !important;
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-card.current-day {
+  background: var(--surface) !important;
+  border: 3px solid var(--primary) !important;
+  box-shadow: inset 0 0 0 2px var(--primary), 0 4px 14px var(--shadow);
+}
+
+.dashboard:not(.ot-dashboard) .weekly-day-card.future-day {
+  background: var(--surface) !important;
+}
+
+.dashboard:not(.ot-dashboard) .demo-note {
+  max-width: 900px;
+  margin: 18px auto 0;
+  color: var(--muted) !important;
+  font-size: 18.67px !important;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .dashboard:not(.ot-dashboard) .weekly-checklist {
+    grid-template-columns: repeat(7, 220px);
+  }
+}
+
+@media (max-width: 650px) {
+  .dashboard:not(.ot-dashboard) .weekly-checklist {
+    grid-template-columns: repeat(7, 230px);
+    gap: 12px;
+  }
+
+  .dashboard:not(.ot-dashboard) .weekly-day-card {
+    min-height: 300px;
+    padding: 18px;
+  }
+}
+
+
+/* Use the same clear sans-serif typeface throughout the whole app.
+   This matches the "Back to weekly plan" link shown on the exercise page. */
+html,
+body,
+body *,
+button,
+input,
+select,
+textarea {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.dashboard-content > .back-link {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 700;
+}
+
+/* Exercise detail page: simpler text and clearer spacing. */
+.dashboard-content > .eyebrow {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.dashboard-content > h2 {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.program-card h3 {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 800;
+}
+
+.program-card p {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.dashboard-content > .primary-action {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 800;
+  min-height: 60px;
+}
+
+
+/* Patient pain/discomfort feedback: compact 0–10 scale and clear comment field */
+.patient-feedback-card {
+  width: min(100%, 1100px);
+  box-sizing: border-box;
+  margin: 24px auto;
+  padding: clamp(20px, 3vw, 32px);
+  border: 2px solid var(--border, #767676);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  color: var(--text, #202124);
+  box-shadow: 0 4px 14px var(--shadow, rgba(0,0,0,.08));
+}
+
+.patient-feedback-card h2,
+.patient-feedback-card h3 {
+  margin: 0 0 8px;
+  color: var(--text, #202124);
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: clamp(25px, 2.2vw, 32px) !important;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.patient-feedback-card > p {
+  margin: 0 0 20px;
+  color: var(--muted, #45484d);
+  font-size: 18.67px !important;
+  line-height: 1.45;
+}
+
+.pain-scale {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 7px;
+  width: 100%;
+  margin: 14px 0 8px;
+}
+
+.pain-scale-button {
+  min-width: 0;
+  min-height: 54px;
+  padding: 8px 2px;
+  border: 2px solid #626262;
+  border-radius: 10px;
+  color: #171717 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .12s ease, outline .12s ease;
+}
+
+/* Color follows the familiar green-to-red pain scale. Numbers and labels
+   remain visible so color is never the only way to understand the scale. */
+.pain-level-0, .pain-level-1 { background: #8BC34A !important; }
+.pain-level-2, .pain-level-3 { background: #B7CE45 !important; }
+.pain-level-4, .pain-level-5 { background: #F4D03F !important; }
+.pain-level-6, .pain-level-7 { background: #E89A32 !important; }
+.pain-level-8, .pain-level-9 { background: #D9652B !important; }
+.pain-level-10 { background: #C9362B !important; color: #fff !important; }
+
+.pain-scale-button:hover {
+  transform: translateY(-2px);
+}
+
+.pain-scale-button.selected {
+  outline: 4px solid var(--text, #202124);
+  outline-offset: 3px;
+  border-color: #111 !important;
+  box-shadow: 0 0 0 2px var(--surface, #fff);
+}
+
+.pain-scale-button:focus-visible {
+  outline: 4px solid var(--primary, #123B63);
+  outline-offset: 4px;
+  z-index: 1;
+}
+
+.pain-scale-anchors {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 24px;
+  color: var(--muted, #45484d);
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.pain-scale-anchors span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pain-scale-anchors span:nth-child(2) {
+  text-align: center;
+  align-items: center;
+}
+
+.pain-scale-anchors span:last-child {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.pain-scale-anchors strong {
+  color: var(--text, #202124);
+  font-size: 18px;
+}
+
+.feedback-comment-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--text, #202124);
+  font-size: 18.67px !important;
+}
+
+.feedback-comment-label strong {
+  font-weight: 800;
+}
+
+.feedback-comment-label span {
+  color: var(--muted, #45484d);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.feedback-comment-input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100px;
+  padding: 14px 16px;
+  border: 2px solid var(--border, #767676);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  color: var(--text, #202124);
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 18.67px !important;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.feedback-comment-input::placeholder {
+  color: var(--muted, #45484d);
+  opacity: 1;
+}
+
+.feedback-comment-input:focus-visible {
+  outline: 4px solid var(--primary, #123B63);
+  outline-offset: 3px;
+}
+
+@media (max-width: 650px) {
+  .patient-feedback-card {
+    padding: 18px 14px;
+  }
+
+  .pain-scale {
+    gap: 4px;
+  }
+
+  .pain-scale-button {
+    min-height: 48px;
+    font-size: 17px !important;
+    border-radius: 7px;
+  }
+
+  .pain-scale-anchors {
+    font-size: 14px;
+  }
+}
