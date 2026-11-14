@@ -1595,3 +1595,119 @@ form button span {
     scroll-snap-align: start;
   }
 }
+
+/* =========================================================
+   NECK PATIENT DASHBOARD — MATCH KNEE DASHBOARD CARD STYLE
+   ========================================================= */
+
+/* Neck dashboard cards: visually aligned with the knee weekly exercise cards. */
+.neck-exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0 18px;
+}
+
+.neck-exercise-card {
+  appearance: none;
+  width: 100%;
+  min-height: 190px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: #f3f0e9;
+  border: 1px solid #e2d9cc;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.neck-exercise-card:not(.neck-exercise-static):hover {
+  transform: translateY(-3px);
+  border-color: #a9a18f;
+  background: #faf8f3;
+  box-shadow: 0 8px 22px rgba(70, 60, 45, 0.07);
+}
+
+.neck-exercise-card:focus-visible {
+  outline: 3px solid #9a9f8c;
+  outline-offset: 3px;
+}
+
+.neck-exercise-card.completed {
+  background: #f0f3ec;
+  border-color: #aab59f;
+}
+
+.neck-exercise-static {
+  cursor: default;
+  opacity: 0.82;
+}
+
+.neck-exercise-number {
+  color: #a79b89;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.neck-exercise-info {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+.neck-exercise-info strong {
+  color: #514d45;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.neck-exercise-info small {
+  color: #928a7d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.neck-exercise-status {
+  color: #8b927f;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.neck-exercise-indicator {
+  align-self: flex-end;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d7d0c4;
+  border-radius: 50%;
+  color: #777e6c;
+  font-size: 19px;
+}
+
+@media (max-width: 850px) {
+  .neck-exercise-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .neck-exercise-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .neck-exercise-card {
+    min-height: 155px;
+  }
+}

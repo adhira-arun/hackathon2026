@@ -2,23 +2,28 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import KneeSession, { type KneeSessionReport } from './KneeSession'
+import StandingKneeSession from './StandingKneeSession'
+import NeckSideBends, { type NeckSessionReport } from './NeckSideBends'
+import NeckExtension from './NeckExtension'
 import './App.css'
+
+type SessionReport = KneeSessionReport | NeckSessionReport
 
 type Role = 'knee' | 'neck' | 'ot'
 type Account = { username: string; password: string; role: Role; name: string }
 
 const accounts: Account[] = [
   { username: 'knee.patient', password: '1234', role: 'knee', name: 'Alex Morgan' },
-  { username: 'tbi.patient', password: '1234', role: 'neck', name: 'Jordan Taylor' },
+  { username: 'neck.patient', password: '1234', role: 'neck', name: 'Jordan Taylor' },
   { username: 'ot.admin', password: '1234', role: 'ot', name: 'Dr. Sarah Bennett' },
 ]
 
 const REPORTS_KEY = 'kinetiq.sessionReports'
 const REST_SETTING_KEY = 'kinetiq.ot.restSeconds'
 
-function readReports(): KneeSessionReport[] {
+function readReports(): SessionReport[] {
   try {
-    return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]') as KneeSessionReport[]
+    return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]') as SessionReport[]
   } catch {
     return []
   }
@@ -26,15 +31,51 @@ function readReports(): KneeSessionReport[] {
 
 
 const WEEKLY_CHECKLIST_KEY = 'kinetiq.weeklyChecklist'
+const NECK_WEEKLY_CHECKLIST_KEY = 'kinetiq.neckWeeklyChecklist'
 const DEMO_COMPLETED_WEEK = '2026-11-08'
+
+const NECK_WEEKLY_EXERCISES = [
+  { day: 'Sunday', exercise: 'Gentle Neck Rotation', type: 'manual' },
+  { day: 'Monday', exercise: 'Neck Side Bends', type: 'side-bends' },
+  { day: 'Tuesday', exercise: 'Neck Flexion and Extension', type: 'extension' },
+  { day: 'Wednesday', exercise: 'Gentle Neck Rotation', type: 'manual' },
+  { day: 'Thursday', exercise: 'Neck Side Bends', type: 'side-bends' },
+  { day: 'Friday', exercise: 'Neck Flexion and Extension', type: 'extension' },
+  { day: 'Saturday', exercise: 'Neck Side Bends', type: 'side-bends' },
+] as const
+
+function readNeckWeeklyChecklist(weekKey: string): number[] {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}'
+    )
+    return saved[weekKey] || []
+  } catch {
+    return []
+  }
+}
+
+function saveNeckCompletedDay(weekKey: string, dayIndex: number) {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}'
+    )
+    const completed: number[] = saved[weekKey] || []
+    if (!completed.includes(dayIndex)) completed.push(dayIndex)
+    saved[weekKey] = completed
+    localStorage.setItem(NECK_WEEKLY_CHECKLIST_KEY, JSON.stringify(saved))
+  } catch {
+    console.error('Could not save neck weekly checklist.')
+  }
+}
 
 const WEEKLY_EXERCISES = [
   { day: 'Sunday', exercise: 'Seated Knee Extensions', type: 'tracked' },
-  { day: 'Monday', exercise: 'Standing Knee Raises', type: 'manual' },
+  { day: 'Monday', exercise: 'Standing Knee Raises', type: 'tracked' },
   { day: 'Tuesday', exercise: 'Seated Knee Extensions', type: 'tracked' },
-  { day: 'Wednesday', exercise: 'Standing Knee Raises', type: 'manual' },
+  { day: 'Wednesday', exercise: 'Standing Knee Raises', type: 'tracked' },
   { day: 'Thursday', exercise: 'Seated Knee Extensions', type: 'tracked' },
-  { day: 'Friday', exercise: 'Standing Knee Raises', type: 'manual' },
+  { day: 'Friday', exercise: 'Standing Knee Raises', type: 'tracked' },
   { day: 'Saturday', exercise: 'Seated Knee Extensions', type: 'tracked' },
 ] as const
 
@@ -91,23 +132,31 @@ function App() {
   const [password, setPassword] = useState('')
   const [account, setAccount] = useState<Account | null>(null)
   const [error, setError] = useState('')
-  const [reports, setReports] = useState<KneeSessionReport[]>(readReports)
+  const [reports, setReports] = useState<SessionReport[]>(readReports)
 
   function handleLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const matched = accounts.find(
-      (item) => item.username === username && item.password === password
-    )
+  event.preventDefault()
 
-    if (!matched) {
-      setError('Incorrect username or password. Please try again.')
-      return
-    }
+  const normalizedUsername = username.trim().toLowerCase()
 
-    setError('')
-    setAccount(matched)
-    if (matched.role === 'ot') setReports(readReports())
+  const matched = accounts.find(
+    (item) =>
+      item.username.toLowerCase() === normalizedUsername &&
+      item.password === password
+  )
+
+  if (!matched) {
+    setError('Incorrect username or password. Please try again.')
+    return
   }
+
+  setError('')
+  setAccount(matched)
+
+  if (matched.role === 'ot') {
+    setReports(readReports())
+  }
+}
 
   function logout() {
     setAccount(null)
@@ -172,7 +221,13 @@ function App() {
   }
 
   if (account.role === 'neck') {
-    return <NeckDashboard account={account} logout={logout} />
+    return (
+      <NeckDashboard
+        account={account}
+        logout={logout}
+        onReport={(report) => setReports((old) => [...old, report])}
+      />
+    )
   }
 
   return (
@@ -295,7 +350,16 @@ function PatientDashboard({
   }
 
   if (showSession) {
-    return (
+    const isStanding =
+      selectedDay !== null &&
+      WEEKLY_EXERCISES[selectedDay].exercise === 'Standing Knee Raises'
+
+    return isStanding ? (
+      <StandingKneeSession
+        onBack={() => setShowSession(false)}
+        onComplete={handleSessionComplete}
+      />
+    ) : (
       <KneeSession
         onBack={() => setShowSession(false)}
         onComplete={handleSessionComplete}
@@ -341,8 +405,12 @@ function PatientDashboard({
                 onClick={() => setShowSession(true)}
               >
                 {completedDays.includes(selectedDay)
-                  ? 'Replay seated knee extension →'
-                  : 'Start seated knee extension →'}
+                  ? selectedExercise.exercise === 'Standing Knee Raises'
+                    ? 'Replay standing knee raises →'
+                    : 'Replay seated knee extension →'
+                  : selectedExercise.exercise === 'Standing Knee Raises'
+                    ? 'Start standing knee raises →'
+                    : 'Start seated knee extension →'}
               </button>
             </>
           ) : (
@@ -511,10 +579,130 @@ function PatientDashboard({
 function NeckDashboard({
   account,
   logout,
+  onReport,
 }: {
   account: Account
   logout: () => void
+  onReport: (report: NeckSessionReport) => void
 }) {
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [today, setToday] = useState(() => new Date())
+  const [completedDays, setCompletedDays] = useState<number[]>([])
+
+  const weekDates = getWeekDates(today)
+  const weekKey = localDateKey(weekDates[0])
+
+  useEffect(() => {
+    const savedDays = readNeckWeeklyChecklist(weekKey)
+    const initialDays =
+      weekKey === DEMO_COMPLETED_WEEK
+        ? Array.from(new Set([...savedDays, 0, 1, 2, 3, 4, 5]))
+        : savedDays
+
+    if (weekKey === DEMO_COMPLETED_WEEK) {
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}'
+        )
+        saved[weekKey] = initialDays
+        localStorage.setItem(NECK_WEEKLY_CHECKLIST_KEY, JSON.stringify(saved))
+      } catch {
+        console.error('Could not initialize neck demo checklist.')
+      }
+    }
+    setCompletedDays(initialDays)
+  }, [weekKey])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setToday(new Date()), 30000)
+    return () => window.clearInterval(interval)
+  }, [])
+
+  function completeDay(dayIndex: number) {
+    saveNeckCompletedDay(weekKey, dayIndex)
+    setCompletedDays((previous) =>
+      previous.includes(dayIndex) ? previous : [...previous, dayIndex]
+    )
+    setSelectedDay(null)
+  }
+
+  function handleSessionComplete(report: NeckSessionReport) {
+    onReport(report)
+    if (report.status === 'completed' && selectedDay !== null) {
+      completeDay(selectedDay)
+    }
+  }
+
+  const selectedExercise =
+    selectedDay !== null ? NECK_WEEKLY_EXERCISES[selectedDay] : null
+
+  if (selectedExercise && selectedDay !== null) {
+    const isSideBends = selectedExercise.type === 'side-bends'
+    const isExtension = selectedExercise.type === 'extension'
+
+    if (isSideBends) {
+      return (
+        <NeckSideBends
+          onBack={() => setSelectedDay(null)}
+          onComplete={handleSessionComplete}
+        />
+      )
+    }
+
+    if (isExtension) {
+      return (
+        <NeckExtension
+          onBack={() => setSelectedDay(null)}
+          onComplete={handleSessionComplete}
+        />
+      )
+    }
+
+    return (
+      <div className="dashboard">
+        <Header name={account.name} role="Patient" logout={logout} />
+        <main className="dashboard-content">
+          <button className="back-link" onClick={() => setSelectedDay(null)}>
+            ← Back to weekly plan
+          </button>
+          <span className="eyebrow">
+            {selectedExercise.day.toUpperCase()} · NECK REHABILITATION
+          </span>
+          <h2>{selectedExercise.exercise}</h2>
+          <p className="dashboard-subtitle">
+            Your scheduled rehabilitation activity.
+          </p>
+          <section className="program-card">
+            <div>
+              <span className="eyebrow">SCHEDULED EXERCISE</span>
+              <h3>Therapist-assigned repetitions</h3>
+              <p>Move gently and follow your occupational therapist's instructions.</p>
+            </div>
+          </section>
+          <p className="demo-note">
+            This exercise is listed in the program but does not yet have camera tracking.
+          </p>
+          <button
+            className="primary-action"
+            onClick={() => completeDay(selectedDay)}
+          >
+            {completedDays.includes(selectedDay)
+              ? 'Return to weekly plan →'
+              : 'Mark exercise complete →'}
+          </button>
+          {completedDays.includes(selectedDay) && (
+            <p className="completion-message">
+              <span>✓</span> This day is marked completed. You can reopen it for demonstration purposes.
+            </p>
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  const completedCount = completedDays.length
+  const progress = (completedCount / 7) * 100
+
   return (
     <div className="dashboard">
       <Header name={account.name} role="Patient" logout={logout} />
@@ -524,38 +712,118 @@ function NeckDashboard({
         <p className="dashboard-subtitle">
           Move comfortably. Build confidence. Track your progress.
         </p>
+
         <section className="program-card">
           <div>
             <span className="eyebrow">YOUR ACTIVE PROGRAM</span>
             <h3>Neck Rehabilitation</h3>
-            <p>Your personalized cervical mobility program.</p>
+            <p>Your personalized weekly cervical mobility plan is ready.</p>
           </div>
         </section>
-        <h3 className="section-heading">Today's exercises</h3>
-        <div className="exercise-list">
-          <div className="exercise-row">
-            <strong>Gentle Neck Rotation</strong>
-            <p>Therapist-assigned repetitions</p>
+
+        <section className="weekly-progress-card">
+          <div className="weekly-progress-heading">
+            <div>
+              <span className="eyebrow">WEEKLY ACTIVITY</span>
+              <h3>Your weekly progress</h3>
+            </div>
+            <strong>{completedCount}/7</strong>
           </div>
-          <div className="exercise-row">
-            <strong>Neck Side Bends</strong>
-            <p>Therapist-assigned repetitions</p>
+          <div className="weekly-progress-track">
+            <div style={{ width: `${progress}%` }} />
           </div>
-          <div className="exercise-row">
-            <strong>Neck Flexion and Extension</strong>
-            <p>Therapist-assigned repetitions</p>
+          <p>{completedCount} of 7 days completed this week.</p>
+        </section>
+
+        <div className="weekly-plan-heading">
+          <div>
+            <span className="eyebrow">SUNDAY – SATURDAY</span>
+            <h3 className="section-heading">Your weekly exercises</h3>
           </div>
         </div>
-        <button className="primary-action" disabled>
-          Neck session coming soon
-        </button>
+
+        <div className="weekly-checklist">
+          {NECK_WEEKLY_EXERCISES.map((item, index) => {
+            const date = weekDates[index]
+            const isCompleted = completedDays.includes(index)
+            const isToday = localDateKey(date) === localDateKey(today)
+            const isFuture =
+              date >
+              new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+            const availabilityLabel = isFuture
+              ? `Available ${item.day} at 12:00 AM`
+              : isToday
+                ? 'Available today'
+                : 'Available'
+
+            return (
+              <button
+                key={item.day}
+                className={`weekly-day-card ${
+                  isCompleted ? 'completed' : ''
+                } ${isFuture ? 'future-day' : ''} ${
+                  isToday ? 'current-day' : ''
+                }`}
+                onClick={() => setSelectedDay(index)}
+                aria-label={`${item.day}: ${item.exercise}. ${
+                  isCompleted
+                    ? 'Completed. Click to replay demo.'
+                    : isFuture
+                      ? `${availabilityLabel}. Demo access enabled.`
+                      : availabilityLabel
+                }`}
+              >
+                <div className="weekly-day-name">
+                  <span>{item.day.slice(0, 3)}</span>
+                  <small>
+                    {date.toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </small>
+                </div>
+
+                <div className="weekly-day-info">
+                  <strong>{item.exercise}</strong>
+                  <small>
+                    2 sets × 10 reps ·{' '}
+                    {item.type === 'manual' ? 'Therapist assigned' : 'Camera tracked'}
+                  </small>
+                  <span className="weekly-day-status">
+                    {isCompleted
+                      ? 'Completed · Demo replay available'
+                      : isFuture
+                        ? `${availabilityLabel} · Demo access`
+                        : availabilityLabel}
+                  </span>
+                </div>
+
+                <div className="weekly-day-indicator">
+                  {isCompleted ? (
+                    <span className="weekly-lock-symbol" aria-label="Completed and locked">🔒</span>
+                  ) : isFuture ? (
+                    <span className="weekly-lock">◷</span>
+                  ) : (
+                    <span className="weekly-open">→</span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
         <p className="demo-note">
-          Demonstration program · Perform only exercises assigned by your therapist.
+          November 8–13 are marked completed for this demonstration. Completed days show a lock icon and remain clickable for demo replay.
+        </p>
+        <p className="demo-note">
+          Follow your occupational therapist's prescribed exercise plan.
         </p>
       </main>
     </div>
   )
 }
+
 
 /* Visualizes the recorded peak angle for each repetition. */
 function AngleProgressChart({
@@ -622,7 +890,7 @@ function AngleProgressChart({
           className="angle-chart-svg"
           viewBox="0 0 720 240"
           role="img"
-          aria-label="Line chart of recorded peak knee angles across repetitions"
+          aria-label="Line chart of recorded peak movement angles across repetitions"
         >
           {yTicks.map((tick) => (
             <g key={tick}>
@@ -702,7 +970,7 @@ function AngleProgressChart({
       </div>
 
       <p className="angle-chart-caption">
-        Repetition number · Recorded peak angle in degrees
+        Repetition number · Recorded peak movement angle in degrees
       </p>
     </div>
   )
@@ -716,14 +984,14 @@ function OtDashboard({
 }: {
   account: Account
   logout: () => void
-  reports: KneeSessionReport[]
+  reports: SessionReport[]
   onReportsRefresh: () => void
 }) {
   const [restSeconds, setRestSeconds] = useState(
     () => Number(localStorage.getItem(REST_SETTING_KEY) || 45)
   )
   const [selectedReport, setSelectedReport] =
-    useState<KneeSessionReport | null>(null)
+    useState<SessionReport | null>(null)
 
   function saveRest() {
     const safeValue = Math.max(5, Math.min(300, restSeconds))
@@ -798,7 +1066,7 @@ function OtDashboard({
           <h3>Rest interval settings</h3>
           <p>
             Set the recovery interval applied automatically after each
-            completed set and after the seated knee extension exercise.
+            completed set and between tracked knee exercises.
           </p>
           <label htmlFor="ot-rest-seconds">Rest duration (seconds)</label>
           <div className="rest-setting-row">
@@ -850,45 +1118,61 @@ function OtDashboard({
                 <span>REPS COMPLETED</span>
                 <strong>
                   {selectedReport.totalRepetitions}/
-                  {selectedReport.targetSets *
-                    selectedReport.targetRepetitionsPerSet}
+                  {selectedReport.targetSets * selectedReport.targetRepetitionsPerSet}
                 </strong>
               </div>
-              <div>
-                <span>BEST EXTENSION</span>
-                <strong>
-                  {selectedReport.bestExtensionAngle ?? '--'}°
-                </strong>
-              </div>
-              <div>
-                <span>AVERAGE EXTENSION</span>
-                <strong>
-                  {selectedReport.averageExtensionAngle ?? '--'}°
-                </strong>
-              </div>
+              {'bestExtensionAngle' in selectedReport ? (
+                <>
+                  <div>
+                    <span>{selectedReport.exercise === 'Standing knee raise' ? 'BEST HIP ANGLE' : 'BEST EXTENSION'}</span>
+                    <strong>{selectedReport.bestExtensionAngle ?? '--'}°</strong>
+                  </div>
+                  <div>
+                    <span>{selectedReport.exercise === 'Standing knee raise' ? 'AVERAGE HIP ANGLE' : 'AVERAGE EXTENSION'}</span>
+                    <strong>{selectedReport.averageExtensionAngle ?? '--'}°</strong>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <span>EXERCISE TYPE</span>
+                  <strong>Neck mobility</strong>
+                </div>
+              )}
             </div>
 
-            <h4>Angle progression</h4>
-            <p className="chart-description">
-              Recorded peak angle for each completed repetition.
-            </p>
-            <AngleProgressChart sets={selectedReport.sets} />
+            {'bestExtensionAngle' in selectedReport ? (
+              <>
+                <h4>Angle progression</h4>
+                <p className="chart-description">
+                  Recorded peak movement angle for each completed repetition.
+                </p>
+                <AngleProgressChart sets={selectedReport.sets} />
+              </>
+            ) : (
+              <>
+                <h4>Movement measurements</h4>
+                <p className="chart-description">
+                  Experimental 2D webcam movement proxies, not clinically validated cervical angles.
+                </p>
+                <pre className="report-json">
+                  {JSON.stringify(selectedReport.movementMetrics, null, 2)}
+                </pre>
+              </>
+            )}
 
             <h4>Set-by-set performance</h4>
             {selectedReport.sets.map((set) => (
               <div className="report-set" key={set.setNumber}>
                 <strong>
-                  Set {set.setNumber}: {set.repetitions}/
-                  {set.targetRepetitions} reps
+                  Set {set.setNumber}: {set.repetitions}/{set.targetRepetitions} reps
                 </strong>
+                {'bestAngle' in set && (
+                  <p>
+                    Best: {set.bestAngle ?? '--'} · Average: {set.averageAngle ?? '--'}
+                  </p>
+                )}
                 <p>
-                  Best: {set.bestAngle ?? '--'}° · Average:{' '}
-                  {set.averageAngle ?? '--'}°
-                </p>
-                <p>
-                  Per-repetition peak angles:{' '}
-                  {set.angles.map((angle) => `${angle}°`).join(', ') ||
-                    'No completed reps'}
+                  Recorded values: {set.angles.join(', ') || 'No completed reps'}
                 </p>
               </div>
             ))}
@@ -900,8 +1184,9 @@ function OtDashboard({
                   patientName: selectedReport.patientName,
                   exercise: selectedReport.exercise,
                   sets: selectedReport.sets,
-                  sessionBest: selectedReport.bestExtensionAngle,
-                  sessionAverage: selectedReport.averageExtensionAngle,
+                  movementMetrics: 'movementMetrics' in selectedReport ? selectedReport.movementMetrics : undefined,
+                  sessionBest: 'bestExtensionAngle' in selectedReport ? selectedReport.bestExtensionAngle : undefined,
+                  sessionAverage: 'averageExtensionAngle' in selectedReport ? selectedReport.averageExtensionAngle : undefined,
                   aiAnalysisInput: selectedReport.aiAnalysisInput,
                 },
                 null,
@@ -929,8 +1214,10 @@ function OtDashboard({
                   </p>
                 </div>
                 <span>
-                  {report.totalRepetitions} reps · Best{' '}
-                  {report.bestExtensionAngle ?? '--'}° →
+                  {report.totalRepetitions} reps
+                  {'bestExtensionAngle' in report
+                    ? ` · Best ${report.bestExtensionAngle ?? '--'}°`
+                    : ' · Neck movement data'} →
                 </span>
               </button>
             ))}
