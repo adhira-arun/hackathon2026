@@ -55,8 +55,8 @@ type Props = {
   onComplete: (report: NeckSessionReport) => void
 }
 
-const TARGET_REPS = 10
-const TARGET_SETS = 2
+const TARGET_REPS = 5
+const TARGET_SETS = 1
 const REQUIRED_FRAMES = 3
 const MIN_VISIBILITY = 0.45
 const MIN_REP_INTERVAL_MS = 900

@@ -11,8 +11,8 @@ type Props = {
 type Point = { x: number; y: number; visibility?: number; presence?: number }
 type Status = 'ready' | 'exercising' | 'resting' | 'paused' | 'completed'
 
-const TARGET_REPS = 10
-const TARGET_SETS = 2
+const TARGET_REPS = 5
+const TARGET_SETS = 1
 const MIN_CONFIDENCE = 0.45
 const REQUIRED_FRAMES = 3
 const MIN_REP_INTERVAL_MS = 900

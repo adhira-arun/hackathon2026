@@ -74,8 +74,8 @@ const CONNECTIONS = [
   [27, 29], [29, 31], [24, 26], [26, 28], [28, 30], [30, 32],
 ]
 
-const TARGET_REPS = 10
-const TARGET_SETS = 2
+const TARGET_REPS = 5
+const TARGET_SETS = 1
 
 // Initial demonstration thresholds. Validate against live readings before relying on them.
 const EXTENSION_THRESHOLD = 111
