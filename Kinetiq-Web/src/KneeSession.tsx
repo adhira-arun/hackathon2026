@@ -758,7 +758,7 @@ function KneeSession({ onBack, onComplete }: KneeSessionProps) {
 
     const report: KneeSessionReport = {
       id: `knee-${Date.now()}`,
-      patientName: 'Alex Morgan',
+      patientName: 'Knee Baby',
       exercise: 'Seated knee extension',
       completedAt: new Date().toISOString(),
       status,

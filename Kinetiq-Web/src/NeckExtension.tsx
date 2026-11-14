@@ -382,7 +382,7 @@ function NeckExtension({ onBack, onComplete }: Props) {
     const angles = records.map((item) => (item.flexion + item.extension) / 2)
     const report: NeckSessionReport = {
       id: `neck-extension-${Date.now()}`,
-      patientName: 'Jordan Taylor',
+      patientName: 'Neck Baby',
       exercise: 'Neck flexion and extension',
       completedAt: new Date().toISOString(),
       status: reportStatus,

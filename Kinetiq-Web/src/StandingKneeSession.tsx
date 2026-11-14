@@ -360,7 +360,7 @@ export default function StandingKneeSession({ onBack, onComplete }: Props) {
     if (!currentSaved) angles.push(...repAnglesRef.current)
     const report: KneeSessionReport = {
       id: `standing-knee-${Date.now()}`,
-      patientName: 'Alex Morgan',
+      patientName: 'Knee Baby',
       exercise: 'Standing knee raise',
       completedAt: new Date().toISOString(),
       status: reportStatus,

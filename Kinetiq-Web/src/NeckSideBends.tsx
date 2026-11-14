@@ -584,7 +584,7 @@ function NeckSideBends({ onBack, onComplete }: Props) {
               </span>
             </div>
             <div className="analysis-metrics">
-              <div className="analysis-metric"><span>LIVE HEAD TILT</span><strong>{liveMovement !== null ? `${liveMovement.toFixed(1)}` : '--'}</strong></div>
+              <div className="analysis-metric"><span>LIVE HEAD TILT</span><strong>{liveAngle !== null ? `${liveAngle.toFixed(1)}°` : '--'}</strong></div>
               <div className="analysis-metric"><span>REPETITIONS</span><strong>{repetitions}/{TARGET_REPS}</strong></div>
               <div className="analysis-metric"><span>SET</span><strong>{setNumber}/{TARGET_SETS}</strong></div>
               <div className="analysis-metric"><span>LEFT TILT</span><strong>{latestRecord ? `${latestRecord.left.toFixed(1)}` : '--'}</strong></div>

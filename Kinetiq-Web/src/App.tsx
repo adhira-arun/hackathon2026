@@ -13,9 +13,9 @@ type Role = 'knee' | 'neck' | 'ot'
 type Account = { username: string; password: string; role: Role; name: string }
 
 const accounts: Account[] = [
-  { username: 'knee.patient', password: '1234', role: 'knee', name: 'Alex Morgan' },
-  { username: 'neck.patient', password: '1234', role: 'neck', name: 'Jordan Taylor' },
-  { username: 'ot.admin', password: '1234', role: 'ot', name: 'Dr. Sarah Bennett' },
+  { username: 'knee.patient', password: '1234', role: 'knee', name: 'Knee Baby' },
+  { username: 'neck.patient', password: '1234', role: 'neck', name: 'Neck Baby' },
+  { username: 'ot.admin', password: '1234', role: 'ot', name: 'Dr. Who' },
 ]
 
 const REPORTS_KEY = 'kinetiq.sessionReports'
@@ -40,6 +40,7 @@ function readReports(): SessionReport[] {
 
 
 const WEEKLY_CHECKLIST_KEY = 'kinetiq.weeklyChecklist'
+const NECK_WEEKLY_CHECKLIST_KEY = 'kinetiq.neckWeeklyChecklist'
 const DEMO_COMPLETED_WEEK = '2026-11-08'
 
 const WEEKLY_EXERCISES = [
@@ -73,10 +74,10 @@ function getWeekDates(today: Date) {
   })
 }
 
-function readWeeklyChecklist(weekKey: string): number[] {
+function readWeeklyChecklist(weekKey: string, storageKey = WEEKLY_CHECKLIST_KEY): number[] {
   try {
     const saved = JSON.parse(
-      localStorage.getItem(WEEKLY_CHECKLIST_KEY) || '{}'
+      localStorage.getItem(storageKey) || '{}'
     )
     return saved[weekKey] || []
   } catch {
@@ -84,17 +85,17 @@ function readWeeklyChecklist(weekKey: string): number[] {
   }
 }
 
-function saveCompletedDay(weekKey: string, dayIndex: number) {
+function saveCompletedDay(weekKey: string, dayIndex: number, storageKey = WEEKLY_CHECKLIST_KEY) {
   try {
     const saved = JSON.parse(
-      localStorage.getItem(WEEKLY_CHECKLIST_KEY) || '{}'
+      localStorage.getItem(storageKey) || '{}'
     )
     const completed: number[] = saved[weekKey] || []
 
     if (!completed.includes(dayIndex)) completed.push(dayIndex)
 
     saved[weekKey] = completed
-    localStorage.setItem(WEEKLY_CHECKLIST_KEY, JSON.stringify(saved))
+    localStorage.setItem(storageKey, JSON.stringify(saved))
   } catch {
     console.error('Could not save weekly checklist.')
   }
@@ -615,46 +616,112 @@ function NeckDashboard({
   toggleTheme: () => void
   onReport: (report: NeckSessionReport) => void
 }) {
-  const [selectedExercise, setSelectedExercise] = useState<'side-bends' | 'extension' | null>(null)
+  const [showSession, setShowSession] = useState(false)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [today, setToday] = useState(() => new Date())
+  const [completedDays, setCompletedDays] = useState<number[]>([])
 
-  function handleComplete(report: NeckSessionReport) {
-    onReport(report)
-  }
-
-  if (selectedExercise === 'side-bends') {
-    return <NeckSideBends onBack={() => setSelectedExercise(null)} onComplete={handleComplete} />
-  }
-
-  if (selectedExercise === 'extension') {
-    return <NeckExtension onBack={() => setSelectedExercise(null)} onComplete={handleComplete} />
-  }
-
+  // The neck checklist is stored separately so knee and neck progress never overlap.
+  const weekDates = getWeekDates(today)
+  const weekKey = localDateKey(weekDates[0])
   const neckExercises = [
-    {
-      id: 'rotation',
-      number: '01',
-      title: 'Gentle Neck Rotation',
-      detail: 'Therapist-assigned repetitions',
-      status: 'Assigned exercise',
-      available: false,
-    },
-    {
-      id: 'side-bends',
-      number: '02',
-      title: 'Neck Side Bends',
-      detail: 'Left → neutral → right → neutral · 2 sets × 10 reps',
-      status: 'Camera tracking available',
-      available: true,
-    },
-    {
-      id: 'extension',
-      number: '03',
-      title: 'Neck Flexion and Extension',
-      detail: 'Flexion → extension → neutral · 2 sets × 10 reps',
-      status: 'Camera tracking available',
-      available: true,
-    },
+    { day: 'Sunday', exercise: 'Neck Side Bends', id: 'side-bends' },
+    { day: 'Monday', exercise: 'Neck Flexion and Extension', id: 'extension' },
+    { day: 'Tuesday', exercise: 'Neck Side Bends', id: 'side-bends' },
+    { day: 'Wednesday', exercise: 'Neck Flexion and Extension', id: 'extension' },
+    { day: 'Thursday', exercise: 'Neck Side Bends', id: 'side-bends' },
+    { day: 'Friday', exercise: 'Neck Flexion and Extension', id: 'extension' },
+    { day: 'Saturday', exercise: 'Neck Side Bends', id: 'side-bends' },
   ] as const
+
+  useEffect(() => {
+    const savedDays = readWeeklyChecklist(weekKey, NECK_WEEKLY_CHECKLIST_KEY)
+    const initialDays = weekKey === DEMO_COMPLETED_WEEK
+      ? Array.from(new Set([...savedDays, 0, 1, 2, 3, 4, 5]))
+      : savedDays
+
+    if (weekKey === DEMO_COMPLETED_WEEK) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(NECK_WEEKLY_CHECKLIST_KEY) || '{}')
+        saved[weekKey] = initialDays
+        localStorage.setItem(NECK_WEEKLY_CHECKLIST_KEY, JSON.stringify(saved))
+      } catch {
+        console.error('Could not initialize neck demo checklist.')
+      }
+    }
+
+    setCompletedDays(initialDays)
+  }, [weekKey])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setToday(new Date()), 30000)
+    return () => window.clearInterval(interval)
+  }, [])
+
+  function completeDay(dayIndex: number) {
+    saveCompletedDay(weekKey, dayIndex, NECK_WEEKLY_CHECKLIST_KEY)
+    setCompletedDays((previous) =>
+      previous.includes(dayIndex) ? previous : [...previous, dayIndex]
+    )
+    setSelectedDay(null)
+  }
+
+  function handleSessionComplete(report: NeckSessionReport) {
+    onReport(report)
+    if (report.status === 'completed' && selectedDay !== null) {
+      completeDay(selectedDay)
+    }
+  }
+
+  if (showSession && selectedDay !== null) {
+    const selected = neckExercises[selectedDay]
+    return selected.id === 'side-bends' ? (
+      <NeckSideBends
+        onBack={() => setShowSession(false)}
+        onComplete={handleSessionComplete}
+      />
+    ) : (
+      <NeckExtension
+        onBack={() => setShowSession(false)}
+        onComplete={handleSessionComplete}
+      />
+    )
+  }
+
+  const selectedExercise = selectedDay !== null ? neckExercises[selectedDay] : null
+
+  if (selectedExercise && selectedDay !== null) {
+    return (
+      <div className="dashboard">
+        <Header name={account.name} role="Patient" logout={logout} theme={theme} toggleTheme={toggleTheme} />
+        <main className="dashboard-content">
+          <button className="back-link" onClick={() => setSelectedDay(null)}>
+            ← Back to weekly plan
+          </button>
+          <span className="eyebrow">{selectedExercise.day.toUpperCase()} · NECK EXERCISE</span>
+          <h2>{selectedExercise.exercise}</h2>
+          <section className="program-card">
+            <div>
+              <span className="eyebrow">YOUR EXERCISE</span>
+              <h3>2 sets of 10</h3>
+              <p>Follow the steps from your therapist.</p>
+            </div>
+          </section>
+          <button className="primary-action" onClick={() => setShowSession(true)}>
+            {completedDays.includes(selectedDay) ? 'Replay exercise' : 'Start exercise'}
+          </button>
+          {completedDays.includes(selectedDay) && (
+            <p className="completion-message">
+              <span>✓</span> This day is marked completed. You can reopen it for demonstration purposes.
+            </p>
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  const completedCount = completedDays.length
+  const progress = (completedCount / 7) * 100
 
   return (
     <div className="dashboard">
@@ -662,9 +729,7 @@ function NeckDashboard({
       <main className="dashboard-content">
         <span className="eyebrow">YOUR REHABILITATION JOURNEY</span>
         <h2>Welcome, {account.name.split(' ')[0]}.</h2>
-        <p className="dashboard-subtitle">
-          Move comfortably. Build confidence. Track your progress.
-        </p>
+        <p className="dashboard-subtitle">Move comfortably. Build confidence. Track your progress.</p>
 
         <section className="program-card">
           <div>
@@ -677,53 +742,78 @@ function NeckDashboard({
         <section className="weekly-progress-card">
           <div className="weekly-progress-heading">
             <div>
-              <span className="eyebrow">TODAY'S PLAN</span>
-              <h3>Your neck exercises</h3>
+              <span className="eyebrow">WEEKLY ACTIVITY</span>
+              <h3>Your weekly progress</h3>
             </div>
-            <strong>02</strong>
+            <strong>{completedCount}/7</strong>
           </div>
-          <div className="weekly-progress-track">
-            <div style={{ width: '66.67%' }} />
+          <div
+            className="weekly-progress-track"
+            role="progressbar"
+            aria-label="Weekly neck exercise progress"
+            aria-valuenow={completedCount}
+            aria-valuemin={0}
+            aria-valuemax={7}
+          >
+            <div style={{ width: `${progress}%` }} />
           </div>
-          <p>Complete your exercises to track your progress.</p>
+          <p>{completedCount} of 7 days completed this week.</p>
         </section>
 
         <div className="weekly-plan-heading">
           <div>
-            <span className="eyebrow">CERVICAL MOBILITY</span>
-            <h3 className="section-heading">Today's exercises</h3>
+            <span className="eyebrow">SUNDAY – SATURDAY</span>
+            <h3 className="section-heading">Your weekly exercises</h3>
           </div>
         </div>
 
-        <div className="neck-exercise-grid">
-          {neckExercises.map((exercise) => (
-            <button
-              key={exercise.id}
-              type="button"
-              className={`neck-exercise-card ${exercise.available ? '' : 'neck-exercise-static'}`}
-              onClick={() => {
-                if (exercise.id === 'side-bends') setSelectedExercise('side-bends')
-                if (exercise.id === 'extension') setSelectedExercise('extension')
-              }}
-              disabled={!exercise.available}
-              aria-label={`${exercise.title}. ${exercise.available ? 'Start exercise.' : 'Assigned exercise, not available yet.'}`}
-            >
-              <span className="neck-exercise-number">{exercise.number}</span>
-              <span className="neck-exercise-info">
-                <strong>{exercise.title}</strong>
-                <small>{exercise.detail}</small>
-              </span>
-              <span className="neck-exercise-status">{exercise.status}</span>
-              <span className="neck-exercise-indicator">
-                {exercise.available ? '→' : '·'}
-              </span>
-            </button>
-          ))}
+        <div className="weekly-checklist">
+          {neckExercises.map((item, index) => {
+            const date = weekDates[index]
+            const isCompleted = completedDays.includes(index)
+            const isToday = localDateKey(date) === localDateKey(today)
+            const isFuture = date > new Date(today.getFullYear(), today.getMonth(), today.getDate())
+            const availabilityLabel = isFuture
+              ? `Available ${item.day} at 12:00 AM`
+              : isToday ? 'Available today' : 'Available'
+
+            return (
+              <button
+                key={item.day}
+                className={`weekly-day-card ${isCompleted ? 'completed' : ''} ${isFuture ? 'future-day' : ''} ${isToday ? 'current-day' : ''}`}
+                onClick={() => setSelectedDay(index)}
+                aria-label={`${item.day}: ${item.exercise}. ${isCompleted ? 'Completed. Click to replay.' : availabilityLabel}`}
+              >
+                <div className="weekly-day-name">
+                  <span>{item.day.slice(0, 3)}</span>
+                  <small>{date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</small>
+                </div>
+                <div className="weekly-day-info">
+                  <strong>{item.exercise}</strong>
+                  <small>2 sets × 10 reps</small>
+                  <span className={`weekly-day-status-label ${isCompleted ? 'is-completed' : isToday ? 'is-today' : ''}`}>
+                    {isCompleted ? 'Completed' : isToday ? 'Ready to start' : isFuture ? 'Coming up' : 'Available'}
+                  </span>
+                  {isCompleted && <span className="weekly-day-replay">Demo replay available</span>}
+                </div>
+                <div className="weekly-day-indicator">
+                  {isCompleted ? (
+                    <span className="weekly-lock-symbol" aria-label="Completed and locked">🔒</span>
+                  ) : isFuture ? (
+                    <span className="weekly-lock">◷</span>
+                  ) : (
+                    <span className="weekly-open">→</span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
 
         <p className="demo-note">
-          Demonstration program · Perform only exercises assigned by your therapist.
+          November 8–13 are marked completed for this demonstration. Completed days show a lock icon and remain clickable for demo replay.
         </p>
+        <p className="demo-note">Follow your occupational therapist's prescribed exercise plan.</p>
       </main>
     </div>
   )
@@ -1104,7 +1194,7 @@ function OtDashboard({
 
       <main className="dashboard-content ot-content">
         <span className="eyebrow">CLINICAL WORKSPACE</span>
-        <h2>Good evening, Sarah.</h2>
+        <h2>Good evening, Dr. Who.</h2>
         <p className="dashboard-subtitle">
           Manage patient programs, review session reports, and personalize recovery settings.
         </p>
