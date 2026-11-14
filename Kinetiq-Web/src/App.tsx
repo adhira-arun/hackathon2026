@@ -14,9 +14,9 @@ type Account = {
 }
 
 const accounts: Account[] = [
-  { username: 'knee.patient', password: '1234', role: 'knee', name: 'Alex Morgan' },
-  { username: 'tbi.patient', password: '1234', role: 'neck', name: 'Jordan Taylor' },
-  { username: 'ot.admin', password: '1234', role: 'ot', name: 'Dr. Sarah Bennett' },
+  { username: 'knee.patient', password: '1234', role: 'knee', name: 'Knee Baby' },
+  { username: 'tbi.patient', password: '1234', role: 'neck', name: 'Neck Baby' },
+  { username: 'ot.admin', password: '1234', role: 'ot', name: 'Dr. Who' },
 ]
 
 function App() {
@@ -357,7 +357,7 @@ function OtDashboard({
             <div className="patient-avatar">AM</div>
 
             <div className="patient-info">
-              <strong>Alex Morgan</strong>
+              <strong>Knee Baby</strong>
               <span>Knee rehabilitation</span>
               <small>Active treatment plan</small>
             </div>
@@ -369,7 +369,7 @@ function OtDashboard({
             <div className="patient-avatar">JT</div>
 
             <div className="patient-info">
-              <strong>Jordan Taylor</strong>
+              <strong>Neck Baby</strong>
               <span>Neck rehabilitation</span>
               <small>Active treatment plan</small>
             </div>
