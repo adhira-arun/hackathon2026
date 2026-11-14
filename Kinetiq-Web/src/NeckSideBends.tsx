@@ -400,7 +400,7 @@ function NeckSideBends({ onBack, onComplete }: Props) {
     const sets = [...setReports]
     const report: NeckSessionReport = {
       id: `neck-side-bends-${Date.now()}`,
-      patientName: 'Jordan Taylor',
+      patientName: 'Neck Baby',
       exercise: 'Neck side bends',
       completedAt: new Date().toISOString(),
       status: reportStatus,
