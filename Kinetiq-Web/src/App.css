@@ -328,6 +328,11 @@ form button span {
   width: 100%;
 }
 
+.primary-action:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
 .demo-note {
   color: #a39788;
   font-size: 10px;
@@ -459,7 +464,7 @@ form button span {
 /* KNEE SESSION */
 
 .session-content {
-  max-width: 950px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 45px 25px 70px;
 }
@@ -488,11 +493,124 @@ form button span {
   margin-bottom: 30px;
 }
 
+/* MOVEMENT ANALYSIS ABOVE CAMERA */
+
+.session-analysis-panel {
+  background: #fff;
+  border: 1px solid #e5ddd0;
+  padding: 22px;
+  margin: 28px 0 22px;
+}
+
+.analysis-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.analysis-heading h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 25px;
+  font-weight: 400;
+  margin: 7px 0 0;
+}
+
+.analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 12px;
+}
+
+.analysis-metric {
+  background: #f7f4ee;
+  border: 1px solid #eee8de;
+  padding: 14px 12px;
+  min-width: 0;
+}
+
+.analysis-metric span {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #918a80;
+}
+
+.analysis-metric strong {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 27px;
+  font-weight: 400;
+  margin-top: 6px;
+}
+
+.analysis-feedback {
+  font-size: 12px;
+  color: #70685d;
+  margin: 12px 0;
+}
+
+.analysis-progress {
+  height: 7px;
+  background: #e5ddd0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.analysis-progress div {
+  height: 100%;
+  background: #819078;
+  transition: width .2s;
+}
+
+.analysis-controls {
+  margin-top: 16px;
+}
+
+.analysis-controls .primary-action {
+  width: 100%;
+}
+
+/* REST TIMER */
+
+.rest-panel {
+  margin-top: 16px;
+  padding: 18px;
+  background: #f3f0e8;
+  text-align: center;
+}
+
+.rest-panel strong {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 40px;
+  font-weight: 400;
+  margin: 4px 0;
+}
+
+.rest-panel p {
+  font-size: 11px;
+  color: #82796e;
+  margin: 0;
+}
+
+/* CAMERA AND GUIDE LAYOUT */
+
+.session-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(270px, .9fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 22px;
+}
+
 .camera-card {
   background: white;
   border: 1px solid #e5ddd0;
   padding: 22px;
   width: 100%;
+  min-width: 0;
 }
 
 .camera-heading {
@@ -531,8 +649,8 @@ form button span {
 .camera-preview {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 300px;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
   background: #49463f;
   overflow: hidden;
   display: block;
@@ -583,7 +701,7 @@ form button span {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transform: scaleX(-1);
   background: #49463f;
 }
@@ -616,28 +734,267 @@ form button span {
   flex-shrink: 0;
 }
 
-/* SESSION CONTROLS */
-
-.camera-controls {
-  display: flex;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.camera-controls .primary-action {
-  flex: 1;
-}
-
 .camera-error {
   color: #a34f43;
   font-size: 12px;
   margin: 12px 0;
 }
 
+/* EXERCISE GUIDE */
+
+.exercise-guide {
+  background: #fff;
+  border: 1px solid #e5ddd0;
+  padding: 22px;
+  min-width: 0;
+}
+
+.exercise-guide h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 12px 0 10px;
+}
+
+.guide-intro,
+.diagram-step span,
+.guide-tip p,
+.camera-position-tip p {
+  color: #82796e;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.guide-intro {
+  margin: 0 0 18px;
+}
+
+.movement-diagram {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  background: #f8f6f1;
+  border: 1px solid #eee9e1;
+}
+
+.diagram-step {
+  min-width: 0;
+  text-align: center;
+}
+
+.diagram-step svg {
+  width: 100%;
+  max-width: 130px;
+  height: auto;
+  overflow: visible;
+}
+
+.diagram-step svg path,
+.diagram-step svg circle {
+  fill: none;
+  stroke: #9b8e7d;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.diagram-step svg circle {
+  fill: #d8cdbf;
+  stroke: #9b8e7d;
+  stroke-width: 2.5;
+}
+
+.diagram-step strong {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.diagram-step span {
+  display: block;
+  font-size: 9px;
+  margin-top: 4px;
+}
+
+.diagram-arrow {
+  color: #a39788;
+  font-size: 20px;
+  text-align: center;
+}
+
+.guide-tip,
+.camera-position-tip {
+  margin-top: 16px;
+  padding: 13px;
+  background: #f5f1e9;
+}
+
+.guide-tip strong {
+  font-size: 11px;
+}
+
+.guide-tip p,
+.camera-position-tip p {
+  margin: 5px 0 0;
+}
+
+.camera-position-tip {
+  background: #edf0e9;
+}
+
+.camera-position-tip .eyebrow {
+  color: #65765e;
+}
+
+/* OT REST SETTINGS */
+
+.ot-settings-card,
+.report-detail,
+.empty-reports {
+  background: #fff;
+  border: 1px solid #e5ddd0;
+  padding: 24px;
+  margin: 28px 0;
+}
+
+.ot-settings-card h3,
+.report-detail h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-size: 24px;
+  margin: 9px 0;
+}
+
+.ot-settings-card p,
+.ot-settings-card small {
+  color: #918a80;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ot-settings-card label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 15px 0 8px;
+}
+
+.rest-setting-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  max-width: 440px;
+}
+
+.rest-setting-row input {
+  width: 130px;
+  height: 42px;
+  border: 1px solid #e5ddd0;
+  background: #faf9f6;
+  padding: 8px 10px;
+  color: #49463f;
+}
+
+.rest-setting-row input:focus {
+  outline: none;
+  border-color: #a39788;
+}
+
+/* SESSION REPORTS */
+
+.report-list {
+  display: grid;
+  gap: 10px;
+}
+
+.report-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #e5ddd0;
+  text-align: left;
+  cursor: pointer;
+  color: #49463f;
+  transition: background .2s;
+}
+
+.report-card:hover {
+  background: #f8f6f1;
+}
+
+.report-card p,
+.report-card span {
+  color: #918a80;
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.report-metrics > div {
+  background: #f7f4ee;
+  padding: 15px;
+}
+
+.report-metrics span {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #918a80;
+}
+
+.report-metrics strong {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 25px;
+  font-weight: 400;
+  margin-top: 7px;
+}
+
+.report-detail h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 400;
+  margin: 24px 0 12px;
+}
+
+.report-set {
+  border-top: 1px solid #e5ddd0;
+  padding: 12px 0;
+}
+
+.report-set p {
+  font-size: 12px;
+  color: #82796e;
+  line-height: 1.5;
+}
+
+.report-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #f7f4ee;
+  padding: 14px;
+  font-size: 10px;
+  max-height: 300px;
+  overflow: auto;
+}
+
 /* SESSION EXERCISES */
 
 .session-exercises {
-  margin-top: 42px;
+  margin-top: 28px;
 }
 
 .session-exercises h2 {
@@ -663,65 +1020,6 @@ form button span {
   color: #918a80;
   font-size: 11px;
   margin: 5px 0 0;
-}
-
-/* RESPONSIVE DESIGN */
-
-@media (max-width: 650px) {
-  .login-card {
-    padding: 30px 24px;
-  }
-
-  .brand {
-    margin-bottom: 28px;
-  }
-
-  .dashboard-content {
-    padding: 42px 20px;
-  }
-
-  .dashboard-content h2 {
-    font-size: 34px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .patient-list,
-  .tools-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .program-card {
-    padding: 22px;
-  }
-
-  .session-content {
-    padding: 30px 18px;
-  }
-
-  .session-content h1 {
-    font-size: 32px;
-  }
-
-  .camera-card {
-    padding: 14px;
-  }
-
-  .camera-preview {
-    min-height: 220px;
-  }
-
-  .camera-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .camera-controls {
-    flex-direction: column;
-  }
 }
 
 /* CENTERED PATIENT DASHBOARDS */
@@ -811,7 +1109,113 @@ form button span {
   text-align: left;
 }
 
-/* Mobile adjustments */
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 850px) {
+  .session-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .exercise-guide {
+    order: 2;
+  }
+
+  .session-layout .camera-preview {
+    aspect-ratio: 16 / 9;
+  }
+
+  .analysis-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analysis-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 650px) {
+  .login-card {
+    padding: 30px 24px;
+  }
+
+  .brand {
+    margin-bottom: 28px;
+  }
+
+  .dashboard-content {
+    padding: 42px 20px;
+  }
+
+  .dashboard-content h2 {
+    font-size: 34px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .patient-list,
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .program-card {
+    padding: 22px;
+  }
+
+  .session-content {
+    padding: 30px 18px;
+  }
+
+  .session-content h1 {
+    font-size: 32px;
+  }
+
+  .camera-card {
+    padding: 14px;
+  }
+
+  .camera-preview {
+    min-height: 220px;
+  }
+
+  .camera-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .camera-controls {
+    flex-direction: column;
+  }
+
+  .session-layout {
+    gap: 14px;
+  }
+
+  .exercise-guide {
+    padding: 18px;
+  }
+
+  .movement-diagram {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .analysis-metrics,
+  .report-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rest-setting-row,
+  .report-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+/* MOBILE HEADER ADJUSTMENTS */
 
 @media (max-width: 650px) {
   .dashboard:not(.ot-dashboard) .app-header {
@@ -824,5 +1228,369 @@ form button span {
 
   .ot-dashboard .header-right {
     gap: 10px;
+  }
+}
+
+/* KNEE SESSION: SIDE-BY-SIDE CAMERA AND MOVEMENT ANALYSIS */
+.session-layout {
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  gap: 22px;
+  align-items: stretch;
+  margin-top: 28px;
+}
+
+.session-side-panel {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-side-panel .analysis-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.session-side-panel .analysis-feedback {
+  line-height: 1.5;
+}
+
+.session-side-panel .analysis-controls {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.session-side-panel .analysis-controls .primary-action {
+  min-height: 49px;
+}
+
+.session-side-panel .analysis-progress {
+  margin-top: 8px;
+}
+
+.exercise-guide {
+  margin-top: 22px;
+}
+
+@media (max-width: 850px) {
+  .session-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .session-side-panel {
+    margin-top: 0;
+  }
+
+  .session-side-panel .analysis-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exercise-guide {
+    margin-top: 18px;
+  }
+}
+
+
+/* Completed demo days: subtle lock indicator */
+.weekly-lock-symbol {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8d2c8;
+  border-radius: 50%;
+  background: #ebe8e1;
+  color: #777267;
+  font-size: 12px;
+  line-height: 1;
+}
+
+
+
+/* =========================================================
+   KINETIQ WEEKLY PLAN — HORIZONTAL DAY TILES
+   Appended overrides; original login, OT and session styles retained.
+   ========================================================= */
+
+.dashboard:not(.ot-dashboard) .weekly-progress-card {
+  margin: 34px 0 48px;
+  padding: 26px 30px;
+  background: #fffdf8;
+  border: 1px solid #e5ddd0;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(73, 70, 63, 0.035);
+  text-align: left;
+}
+
+.weekly-progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+}
+
+.weekly-progress-heading h3 {
+  margin: 8px 0 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 27px;
+  font-weight: 400;
+}
+
+.weekly-progress-heading > strong {
+  color: #817969;
+  font-family: 'Playfair Display', serif;
+  font-size: 38px;
+  font-weight: 400;
+}
+
+.weekly-progress-track {
+  height: 8px;
+  margin: 18px 0 12px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #eee9e1;
+}
+
+.weekly-progress-track > div {
+  height: 100%;
+  border-radius: inherit;
+  background: #89957f;
+  transition: width .25s ease;
+}
+
+.weekly-progress-card > p {
+  margin: 0;
+  color: #a39788;
+  font-size: 11px;
+  text-align: center;
+}
+
+.weekly-plan-heading {
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.weekly-plan-heading .section-heading {
+  margin: 8px 0 0;
+  font-size: 31px;
+}
+
+.weekly-checklist {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 2px 1px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #c8bba9 #eee9e1;
+}
+
+.weekly-day-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 190px;
+  padding: 14px 11px;
+  border: 1px solid #e5ddd0;
+  border-radius: 13px;
+  background: #fffdf8;
+  color: #49463f;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(73, 70, 63, .035);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.weekly-day-card:hover {
+  transform: translateY(-2px);
+  border-color: #c8bba9;
+  box-shadow: 0 7px 18px rgba(73, 70, 63, .08);
+}
+
+.weekly-day-card:focus-visible {
+  outline: 2px solid #89957f;
+  outline-offset: 3px;
+}
+
+.weekly-day-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 39px;
+  color: #70685d;
+}
+
+.weekly-day-name span {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.weekly-day-name small {
+  color: #a39788;
+  font-size: 10px;
+}
+
+.weekly-day-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+
+.weekly-day-info strong {
+  display: block;
+  color: #49463f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.weekly-day-info > small {
+  display: block;
+  color: #918a80;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.weekly-day-status {
+  display: block;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #eee9e1;
+  color: #918a80;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.weekly-day-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  width: 27px;
+  height: 27px;
+  min-width: 27px;
+  margin-top: auto;
+  border: 1px solid #e5ddd0;
+  border-radius: 50%;
+  background: #fffdf8;
+  color: #8d8579;
+  font-size: 13px;
+}
+
+.weekly-day-card.completed {
+  background: #f0eee8;
+  border-color: #e1dbd0;
+}
+
+.weekly-day-card.completed .weekly-day-name span,
+.weekly-day-card.completed .weekly-day-info strong {
+  color: #777267;
+}
+
+.weekly-day-card.completed .weekly-day-status {
+  color: #71806a;
+}
+
+.weekly-day-card.completed .weekly-day-indicator {
+  background: #e5e9df;
+  border-color: #d2dacb;
+  color: #68765f;
+}
+
+.weekly-lock-symbol {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #68765f;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.weekly-day-card.current-day {
+  border: 1.5px solid #aab39f;
+  background: #f2f4ee;
+  box-shadow: inset 0 3px 0 #89957f;
+}
+
+.weekly-day-card.current-day .weekly-day-name span,
+.weekly-day-card.current-day .weekly-day-status {
+  color: #68765f;
+}
+
+.weekly-day-card.current-day .weekly-day-indicator {
+  border-color: #cbd3c3;
+  background: #e7ece2;
+  color: #68765f;
+}
+
+.weekly-day-card.future-day {
+  background: #faf8f3;
+}
+
+.dashboard:not(.ot-dashboard) .demo-note {
+  margin: 14px auto 0;
+  max-width: 760px;
+  color: #a39788;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .weekly-checklist {
+    grid-template-columns: repeat(7, minmax(112px, 1fr));
+    overflow-x: auto;
+  }
+
+  .weekly-day-card {
+    min-height: 184px;
+    padding: 12px 9px;
+  }
+}
+
+@media (max-width: 650px) {
+  .dashboard:not(.ot-dashboard) .weekly-progress-card {
+    padding: 20px 18px;
+    margin: 26px 0 36px;
+  }
+
+  .weekly-progress-heading h3 {
+    font-size: 23px;
+  }
+
+  .weekly-progress-heading > strong {
+    font-size: 32px;
+  }
+
+  .weekly-plan-heading .section-heading {
+    font-size: 27px;
+  }
+
+  .weekly-checklist {
+    grid-template-columns: repeat(7, 132px);
+    gap: 9px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .weekly-day-card {
+    min-height: 176px;
+    scroll-snap-align: start;
   }
 }
